@@ -5,10 +5,8 @@
 
 Bool expand_macros(char *filenames[], int num_of_files) {
     int i;
-    char const *AS_FILE_EXTENSION = ".as";
     char *new_filename;
     FILE *current_file;
-
     for(i=0;i<num_of_files;i++){
         /* TODO: separate to new method */
         new_filename = malloc(strlen(filenames[i]) + strlen(AS_FILE_EXTENSION));
