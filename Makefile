@@ -1,7 +1,7 @@
 CC = gcc
 COMP_FLAG = -ansi -Wall -pedantic -std=c90
 
-main: assembler.o
+all: assembler.o
 	$(CC) assembler.o $(COMP_FLAG) $(DEBUG_FLAG) $(OBJS) -o $@
 
 assembler.o: assembler.c
