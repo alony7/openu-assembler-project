@@ -8,7 +8,8 @@ on:
 
 jobs:
   build:
-
+    name:
+        make-check
     runs-on: ubuntu-latest
 
     steps:
