@@ -2,6 +2,7 @@
 #include <malloc.h>
 #include <string.h>
 #include "utils.h"
+#include "consts.h"
 
 Bool expand_macros(char *filenames[], int num_of_files) {
     int i;
@@ -9,6 +10,7 @@ Bool expand_macros(char *filenames[], int num_of_files) {
     FILE *current_file;
     for(i=0;i<num_of_files;i++){
         /* TODO: separate to new method */
+        /* TODO: check buffer*/
         new_filename = malloc(strlen(filenames[i]) + strlen(AS_FILE_EXTENSION));
         strcpy(new_filename,filenames[i]);
         strcat(new_filename,AS_FILE_EXTENSION);
