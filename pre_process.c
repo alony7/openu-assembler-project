@@ -1,8 +1,8 @@
 #include <stdio.h>
 #include <malloc.h>
 #include <string.h>
-#include "utils.h"
 #include "consts.h"
+#include "macros_table.h"
 
 Bool expand_macros(char *filenames[], int num_of_files) {
     int i;
