@@ -4,6 +4,7 @@
 typedef struct {
     char *name;
     char **value;
+    int row_number;
 } MacroItem;
 
 typedef struct {
@@ -24,6 +25,6 @@ void free_macro_table(MacroTable *table);
 
 void free_macro_item(MacroItem *item);
 
-MacroItem create_macro_item(char *name, char **value);
+MacroItem *create_macro_item(char *name, char **value, int row_number);
 
-Bool add_append_item_value(MacroItem *item, char *value);
+Bool append_macro_item_value(MacroItem *item, char *value);

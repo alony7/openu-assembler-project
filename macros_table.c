@@ -10,6 +10,14 @@ MacroTable create_macro_table(){
     return table;
 }
 
+MacroItem *create_macro_item(char *name, char **value, int row_number){
+    MacroItem *item = malloc(sizeof(MacroItem));
+    item->name = name;
+    item->value = value;
+    item->row_number = row_number;
+    return item;
+}
+
 Bool add_macro_item(MacroTable *table, MacroItem *item){
     if(table->size == table->capacity){
         table->capacity += MACRO_TABLE_CAPACITY;
