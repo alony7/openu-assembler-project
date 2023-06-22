@@ -19,7 +19,7 @@ void parse_operand_row(char *line, OperandRow *parsed_row) {
     strcpy(parsed_row->original_line, line);
 
     if (line[0] == '\n' || line[0] == '\0') {
-        // Empty line, no further processing needed
+        /* Empty line, no further processing needed*/
         parsed_row->operand = NULL;
         parsed_row->parameters = NULL;
         parsed_row->parameters_count = 0;
@@ -50,7 +50,7 @@ static FileOperands *create_file_operands(){
     return file_operands;
 }
 
-//TODO: explain the exercise allowed max rows, and maybe add limit
+/*TODO: explain the exercise allowed max rows, and maybe add limit*/
 FileOperands *parse_file_to_operand_rows(FILE *file){
     int i;
     FileOperands *file_operands = create_file_operands();
@@ -69,7 +69,7 @@ FileOperands *parse_file_to_operand_rows(FILE *file){
         strcpy(tmp_line, line);
 
         parse_operand_row(tmp_line, current_row);
-        //resize rows if needed
+        /*resize rows if needed*/
         rows_count++;
     }
     file_operands->rows = rows;

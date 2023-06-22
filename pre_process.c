@@ -40,7 +40,7 @@ static Bool fill_macro_table(FileOperands *file_operands, MacroTable *table) {
             add_macro_item(table, item);
             continue;
         } else if (is_string_equal(parsed_row.operand, START_MACRO_DIRECTIVE)) {
-            //TODO: validate if macro name is caught by command
+            /*TODO: validate if macro name is caught by command*/
             if (parsed_row.parameters_count != 1) {
                 printf("Error: invalid number of parameters for '%s' in line %d\n", START_MACRO_DIRECTIVE, row_number);
                 return FALSE;
@@ -66,8 +66,8 @@ static Bool fill_macro_table(FileOperands *file_operands, MacroTable *table) {
     return TRUE;
 }
 
-//TODO: Check if i need to delete empty lines and comments
-//function to expand the macros in every occurences, based on the macro table
+/*TODO: Check if i need to delete empty lines and comments*/
+/*function to expand the macros in every occurences, based on the macro table*/
 static Bool rewrite_macros(FileOperands *file_operands, MacroTable *table, FILE *output_file) {
     int row_number = 0;
     Bool is_macro = FALSE;

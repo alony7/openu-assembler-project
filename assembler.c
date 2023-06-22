@@ -8,13 +8,13 @@ static void execute_program(int argc, char *argv[]) {
     argv += 1;
 
 
-    //TODO: extract to function
+    /*TODO: extract to function*/
     if(argc == 1){
         printf("No arguments were given. Exiting...\n");
         return;
     }
 
-    //throw error for any filename given that ends with .as
+    /*throw error for any filename given that ends with .as*/
     for( i = 0; i < argc -1; i++){
         if(strstr(argv[i],".as") != NULL){
             printf("Error: file name cannot end with .as\n");
