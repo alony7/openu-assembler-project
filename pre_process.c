@@ -69,7 +69,22 @@ static Bool fill_macro_table(FileOperands *file_operands, MacroTable *table) {
     }
     return TRUE;
 }
+static char *get_rewritten_line(FileOperands *file_operands, OperandRow parsed_row, MacroTable *table) {
+    char *line_output = {0};
+    char *raw_line = {0};
+    MacroItem *current_item = NULL;
+    if (parsed_row.operand == NULL) {
+        line_output = parsed_row.original_line;
+    }
+    else if (get_macro_item(table, parsed_row.operand) != NULL) {
+        current_item = get_macro_item(table, parsed_row.operand);
+        line_output = string_array_to_string(current_item->value, current_item->value_size);
 
+    } else {
+        line_output = parsed_row.original_line;
+    }
+    return line_output;
+}
 //TODO: merge with fill to base file encoder
 //function to expand the macros in every occurences, based on the macro table
 static Bool rewrite_macros(FileOperands *file_operands, MacroTable *table, FILE *output_file) {
@@ -94,26 +109,15 @@ static Bool rewrite_macros(FileOperands *file_operands, MacroTable *table, FILE 
             //append line to output file
         else {
             if (!is_macro) {
-
-                //                //TODO: check if macro is valid
-//                //TODO: check if macro is defined
-//                //TODO: check if macro line is not before macro definition
-                if (parsed_row.operand == NULL) {
-                    line_output = raw_line;
-                    }
-                else if (get_macro_item(table, parsed_row.operand) != NULL) {
-                    current_item = get_macro_item(table, parsed_row.operand);
-                    line_output = string_array_to_string(current_item->value, current_item->value_size);
-
-                } else {
-                    line_output = raw_line;
-                }
+                line_output = get_rewritten_line(file_operands, parsed_row, table);
                 fputs(line_output, output_file);
             }
 
             }
     }
 }
+
+
 
 static Bool expand_file_macros(char *input_filename, char *output_filename) {
     Bool result = TRUE;
