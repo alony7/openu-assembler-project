@@ -9,6 +9,12 @@
 static Bool line_is_directive(const char *line, const char *directive) {
     int i;
     for (i = 0; i < strlen(directive); i++) {
+        if (line == NULL) {
+            return FALSE;
+        }
+        if (line[i] == '\0') {
+            return FALSE;
+        }
         if (line[i] != directive[i]) {
             return FALSE;
         }
@@ -16,21 +22,19 @@ static Bool line_is_directive(const char *line, const char *directive) {
     return TRUE;
 }
 
-static Bool fill_macro_table(FILE *file, MacroTable *table) {
-    char line[MAX_LINE_LENGTH] = {0};
-    char tmp_line[MAX_LINE_LENGTH] = {0};
+static Bool fill_macro_table(FileOperands *file_operands, MacroTable *table) {
+    int row_number = 0;
+    char *raw_line;
     OperandRow parsed_row;
     MacroItem *item;
+    MacroItem *tmp_item = NULL;
     Bool is_macro = FALSE;
-    int row_number = 0;
-    while (fgets(line, MAX_LINE_LENGTH, file) != NULL) {
-        row_number++;
-        if (line[0] == '\n' || line[0] == ';') {
+    for (row_number = 0; row_number < file_operands->size; row_number++) {
+        parsed_row = file_operands->rows[row_number];
+        raw_line = parsed_row.original_line;
+        if (raw_line[0] == ';' && !is_macro) {
             continue;
         }
-        strcpy(tmp_line, line);
-        parse_operand_row(tmp_line, &parsed_row);
-        /* comment line */
         if (line_is_directive(parsed_row.operand, END_MACRO_DIRECTIVE)) {
             if (!is_macro) {
                 printf("Error: invalid end of macro in line %d\n", row_number);
@@ -45,62 +49,69 @@ static Bool fill_macro_table(FILE *file, MacroTable *table) {
                 return FALSE;
             }
             //TODO: validate macro doesnt already exist
+            if (is_macro) {
+                printf("Error: nested macro in line %d\n", row_number);
+                return FALSE;
+            }
+            if ((tmp_item = get_macro_item(table, parsed_row.parameters[0])) != NULL) {
+                printf("Error: macro '%s' already exists in line %d\n", tmp_item->name,tmp_item->row_number);
+                return FALSE;
+            }
             item = create_macro_item(parsed_row.parameters[0], NULL, row_number, 0);
             is_macro = TRUE;
 
         } else {
             if (is_macro) {
-                append_macro_item_value(item, line);
+                append_macro_item_value(item, raw_line);
             }
         }
-        //check if end of macro
 
     }
     return TRUE;
 }
+
 //TODO: merge with fill to base file encoder
 //function to expand the macros in every occurences, based on the macro table
-static Bool rewrite_macros(FILE *input_file, FILE *output_file, MacroTable *table) {
-    char line[MAX_LINE_LENGTH] = {0};
-    char tmp_line[MAX_LINE_LENGTH] = {0};
-    char *line_output = NULL;
-    OperandRow parsed_row;
-    MacroItem *item;
+static Bool rewrite_macros(FileOperands *file_operands, MacroTable *table, FILE *output_file) {
     int row_number = 0;
     Bool is_macro = FALSE;
-    while (fgets(line, MAX_LINE_LENGTH, input_file) != NULL) {
-        row_number++;
-        if (line[0] == '\n' || line[0] == ';') {
-            continue;
-        }
-        strcpy(tmp_line, line);
-        parse_operand_row(tmp_line, &parsed_row);
+    char *line_output = {0};
+    char *raw_line = {0};
+    OperandRow parsed_row;
+    MacroItem *current_item = NULL;
+    for (row_number = 0; row_number < file_operands->size; row_number++) {
+        parsed_row = file_operands->rows[row_number];
+        raw_line = line_output =  parsed_row.original_line;
         /* comment line */
-        if (line[0] == ';') {
+        if (raw_line[0] == ';') {
             continue;
-        } else if (line_is_directive(line, START_MACRO_DIRECTIVE)) {
+        } else if (line_is_directive(raw_line, START_MACRO_DIRECTIVE)) {
             is_macro = TRUE;
-        } else if (line_is_directive(line, END_MACRO_DIRECTIVE)) {
+        } else if (line_is_directive(raw_line, END_MACRO_DIRECTIVE)) {
             //write macro value to output file
             is_macro = FALSE;
         }
             //append line to output file
         else {
             if (!is_macro) {
+
                 //                //TODO: check if macro is valid
 //                //TODO: check if macro is defined
 //                //TODO: check if macro line is not before macro definition
-                if(get_macro_item(table,parsed_row.operand ) != NULL){
-                    item = get_macro_item(table, parsed_row.operand );
-                    line_output = string_array_to_string(item->value, item->value_size);
+                if (parsed_row.operand == NULL) {
+                    line_output = raw_line;
+                    }
+                else if (get_macro_item(table, parsed_row.operand) != NULL) {
+                    current_item = get_macro_item(table, parsed_row.operand);
+                    line_output = string_array_to_string(current_item->value, current_item->value_size);
 
-                }
-                else{
-                    line_output = line;
+                } else {
+                    line_output = raw_line;
                 }
                 fputs(line_output, output_file);
             }
-        }
+
+            }
     }
 }
 
@@ -110,9 +121,10 @@ static Bool expand_file_macros(char *filename) {
     //TODO: build output file name
     FILE *output_file = fopen("C:\\Users\\alons\\vm\\exercises\\mm14\\openu-assembler-project\\temp.txt", "w");
     MacroTable macro_table = create_macro_table();
-    if ((result = fill_macro_table(input_file, &macro_table))) {
+    FileOperands *parsed_input_file = parse_file_to_operand_rows(input_file);
+    if ((result = fill_macro_table(parsed_input_file, &macro_table))) {
         fseek(input_file, 0, SEEK_SET);
-        result = rewrite_macros(input_file, output_file, &macro_table);
+        result = rewrite_macros(parsed_input_file, &macro_table, output_file);
     }
     fclose(input_file);
     fclose(output_file);

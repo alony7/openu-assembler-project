@@ -1,4 +1,4 @@
-
+#pragma once
 #include "input_utils.h"
 
 typedef enum Bool {

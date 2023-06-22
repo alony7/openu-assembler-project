@@ -53,7 +53,7 @@ MacroItem *remove_macro(MacroTable *table, char *macro_name){
 
 MacroItem *get_macro_item(MacroTable *table, char *name){
     int i;
-    MacroItem *item;
+    MacroItem *item = NULL;
     for(i=0;i<table->size;i++){
         item = &table->items[i];
         if(strcmp(item->name, name) == 0){
