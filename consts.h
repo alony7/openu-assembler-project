@@ -8,7 +8,7 @@
 #define WORD_SIZE 12
 #define START_MACRO_DIRECTIVE "mcro"
 #define END_MACRO_DIRECTIVE "endmcro"
-#define MAX_LINE_LENGTH 80
+#define MAX_LINE_LENGTH 81
 #define MACRO_TABLE_CAPACITY 10
 #define BASE_ROW_BATCH_SIZE 10
 #define READ_MODE "r"

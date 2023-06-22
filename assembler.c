@@ -34,6 +34,7 @@ static void execute_program(int argc, char *argv[]) {
 }
 
 /*TODO: add detailed comment*/
+/* TODO: wrap malloc */
 int main(int argc, char *argv[]) {
     execute_program(argc, argv);
     return 0;

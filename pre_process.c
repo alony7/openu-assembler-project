@@ -6,20 +6,12 @@
 #include "io_parsers.h"
 
 
-static Bool line_is_directive(const char *line, const char *directive) {
-    int i;
-    for (i = 0; i < strlen(directive); i++) {
-        if (line == NULL) {
-            return FALSE;
-        }
-        if (line[i] == '\0') {
-            return FALSE;
-        }
-        if (line[i] != directive[i]) {
-            return FALSE;
-        }
+static Bool is_string_equal(const char *line, const char *directive) {
+    if (line == NULL || directive == NULL) {
+        return FALSE;
     }
-    return TRUE;
+
+    return !strcmp(line, directive);
 }
 
 static Bool fill_macro_table(FileOperands *file_operands, MacroTable *table) {
@@ -35,17 +27,22 @@ static Bool fill_macro_table(FileOperands *file_operands, MacroTable *table) {
         if (raw_line[0] == ';' && !is_macro) {
             continue;
         }
-        if (line_is_directive(parsed_row.operand, END_MACRO_DIRECTIVE)) {
+        if (is_string_equal(parsed_row.operand, END_MACRO_DIRECTIVE)) {
             if (!is_macro) {
                 printf("Error: invalid end of macro in line %d\n", row_number);
+                return FALSE;
+            }
+            if(parsed_row.parameters_count != 0){
+                printf("Error: invalid number of parameters for '%s' in line %d\n", END_MACRO_DIRECTIVE, row_number);
                 return FALSE;
             }
             is_macro = FALSE;
             add_macro_item(table, item);
             continue;
-        } else if (line_is_directive(parsed_row.operand, START_MACRO_DIRECTIVE)) {
+        } else if (is_string_equal(parsed_row.operand, START_MACRO_DIRECTIVE)) {
+            //TODO: validate if macro name is caught by command
             if (parsed_row.parameters_count != 1) {
-                printf("Error: invalid parameters for '%s' in line %d\n", START_MACRO_DIRECTIVE, row_number);
+                printf("Error: invalid number of parameters for '%s' in line %d\n", START_MACRO_DIRECTIVE, row_number);
                 return FALSE;
             }
             if (is_macro) {
@@ -84,13 +81,11 @@ static Bool rewrite_macros(FileOperands *file_operands, MacroTable *table, FILE 
         /* comment line */
         if (raw_line[0] == ';') {
             continue;
-        } else if (line_is_directive(raw_line, START_MACRO_DIRECTIVE)) {
+        } else if (is_string_equal(parsed_row.operand, START_MACRO_DIRECTIVE)) {
             is_macro = TRUE;
-        } else if (line_is_directive(raw_line, END_MACRO_DIRECTIVE)) {
-            //write macro value to output file
+        } else if (is_string_equal(parsed_row.operand, END_MACRO_DIRECTIVE)) {
             is_macro = FALSE;
         }
-            //append line to output file
         else {
             if (!is_macro) {
                 if (parsed_row.operand == NULL) {
@@ -155,7 +150,11 @@ Bool expand_macros(char *filenames[], int num_of_files) {
         printf("Opening File: %s\n", filename_with_as_extension);
         FILE *input_file = create_file_stream(filename_with_as_extension, READ_MODE);
         FILE *output_file = create_file_stream(filename_with_am_extension, WRITE_MODE);
-        if (expand_file_macros(input_file, output_file)) {
+        if (!output_file) {
+            printf("Error: Failed to create file %s\n", filename_with_am_extension);
+            continue;
+        }
+        if (expand_file_macros(input_file, output_file) && input_file) {
             printf("File %s expanded successfully\n", filename_with_as_extension);
         } else {
             printf("Error: Failed to expand file %s\n", filename_with_as_extension);

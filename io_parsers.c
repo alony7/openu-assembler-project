@@ -8,7 +8,6 @@
 FILE *create_file_stream(char *file_name, char *mode) {
     FILE *file = fopen(file_name, mode);
     if (file == NULL) {
-        printf("Error: could not open file '%s'\n", file_name);
         return NULL;
     }
     return file;
