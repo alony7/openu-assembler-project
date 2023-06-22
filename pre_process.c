@@ -115,11 +115,11 @@ static Bool rewrite_macros(FileOperands *file_operands, MacroTable *table, FILE 
     }
 }
 
-static Bool expand_file_macros(char *filename) {
+static Bool expand_file_macros(char *input_filename, char *output_filename) {
     Bool result = TRUE;
-    FILE *input_file = fopen(filename, "r");
+    FILE *input_file = fopen(input_filename, READ_MODE);
     //TODO: build output file name
-    FILE *output_file = fopen("C:\\Users\\alons\\vm\\exercises\\mm14\\openu-assembler-project\\temp.txt", "w");
+    FILE *output_file = fopen(output_filename, WRITE_MODE);
     MacroTable macro_table = create_macro_table();
     FileOperands *parsed_input_file = parse_file_to_operand_rows(input_file);
     if ((result = fill_macro_table(parsed_input_file, &macro_table))) {
@@ -135,22 +135,31 @@ static Bool expand_file_macros(char *filename) {
 
 Bool expand_macros(char *filenames[], int num_of_files) {
     int i;
-    char filename_with_extension[256];
+    char filename_with_as_extension[256];
+    char filename_with_am_extension[256];
     FILE *current_file;
     for (i = 0; i < num_of_files; i++) {
         /* TODO: separate to new method */
         /* TODO: check buffer*/
-        strcpy(filename_with_extension, filenames[i]);
-        strcat(filename_with_extension, AS_FILE_EXTENSION);
+        strcpy(filename_with_as_extension, filenames[i]);
+        strcat(filename_with_as_extension, AS_FILE_EXTENSION);
         /*TODO: Output error message */
-        if ((current_file = fopen(filename_with_extension, "r")) == NULL) {
+        if ((current_file = fopen(filename_with_as_extension, "r")) == NULL) {
             //print error message for failed file opening
-            printf("Error: Failed to open file %s\n", filename_with_extension);
+            printf("Error: Failed to open file %s\n", filename_with_as_extension);
             continue;
         }
+
+        strcpy(filename_with_am_extension, filenames[i]);
+        strcat(filename_with_am_extension, AM_FILE_EXTENSION);
         /*TODO: expand macro */
-        printf("Opening File: %s\n", filename_with_extension);
-        expand_file_macros(filename_with_extension);
+        printf("Opening File: %s\n", filename_with_as_extension);
+        if(expand_file_macros(filename_with_as_extension,filename_with_am_extension)){
+            printf("File %s expanded successfully\n", filename_with_as_extension);
+        }
+        else{
+            printf("Error: Failed to expand file %s\n", filename_with_as_extension);
+        }
     }
     return TRUE;
 }
