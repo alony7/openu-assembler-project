@@ -129,6 +129,7 @@ static Bool expand_file_macros(char *filename) {
     fclose(input_file);
     fclose(output_file);
     free_macro_table(&macro_table);
+    free_file_operands(parsed_input_file);
     return result;
 }
 

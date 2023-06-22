@@ -85,3 +85,21 @@ void remove_row_from_file_operands(FileOperands *file_operands, int row_index){
     }
     file_operands->size--;
 }
+
+void free_operand_row(OperandRow *row){
+    int i;
+    free(row->operand);
+    for(i=0;i<row->parameters_count;i++){
+        free(row->parameters[i]);
+    }
+    free(row->parameters);
+}
+
+void free_file_operands(FileOperands *file_operands){
+    int i;
+    for(i=0;i<file_operands->size;i++){
+        free_operand_row(file_operands->rows + i);
+    }
+    free(file_operands->rows);
+    free(file_operands);
+}
