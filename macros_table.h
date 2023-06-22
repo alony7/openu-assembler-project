@@ -1,10 +1,11 @@
 #include "consts.h"
 #include "utils.h"
-
+#pragma once
 typedef struct {
     char *name;
     char **value;
     int row_number;
+    int value_size;
 } MacroItem;
 
 typedef struct {
@@ -25,6 +26,6 @@ void free_macro_table(MacroTable *table);
 
 void free_macro_item(MacroItem *item);
 
-MacroItem *create_macro_item(char *name, char **value, int row_number);
+MacroItem *create_macro_item(char *name, char **value, int row_number, int value_size);
 
-Bool append_macro_item_value(MacroItem *item, char *value);
+Bool append_macro_item_value(MacroItem *item, char *value_to_append);

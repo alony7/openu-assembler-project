@@ -10,11 +10,13 @@ MacroTable create_macro_table(){
     return table;
 }
 
-MacroItem *create_macro_item(char *name, char **value, int row_number){
+MacroItem *create_macro_item(char *name, char **value, int row_number,int value_size){
     MacroItem *item = malloc(sizeof(MacroItem));
-    item->name = name;
+    item->name = malloc(strlen(name) + 1);
+    strcpy(item->name, name);
     item->value = value;
     item->row_number = row_number;
+    item->value_size = value_size;
     return item;
 }
 
@@ -69,23 +71,31 @@ void free_macro_table(MacroTable *table){
     free(table->items);
 }
 
-Bool append_macro_item_value(MacroItem *item, char *value){
+Bool append_macro_item_value(MacroItem *item, char *value_to_append) {
     int i;
     char **new_value;
-    if(item->value == NULL){
-        item->value = malloc(sizeof(char*));
-        if(item->value == NULL){
+
+    if (item->value == NULL) {
+        item->value = malloc(2 * sizeof(char *));
+        if (item->value == NULL) {
             return FALSE;
         }
-        item->value[0] = NULL;
+        item->value[0] = strdup(value_to_append);
+        item->value[1] = NULL;
+    } else {
+        for (i = 0; item->value[i] != NULL; i++)
+            ;
+
+        new_value = realloc(item->value, (i + 2) * sizeof(char *));
+        if (new_value == NULL) {
+            return FALSE;
+        }
+
+        item->value = new_value;
+        item->value[i] = strdup(value_to_append);
+        item->value[i + 1] = NULL;
     }
-    for(i=0;item->value[i] != NULL;i++);
-    new_value = realloc(item->value,(i+2) * sizeof(char*));
-    if(new_value == NULL){
-        return FALSE;
-    }
-    item->value = new_value;
-    item->value[i] = value;
-    item->value[i+1] = NULL;
+
+    item->value_size += 1;
     return TRUE;
 }
