@@ -15,6 +15,7 @@ typedef struct FileOperands {
     int size;
 } FileOperands;
 
+FILE *create_file_stream(char *file_name, char *mode);
 
 void parse_operand_row(char *line, OperandRow *parsed_row);
 

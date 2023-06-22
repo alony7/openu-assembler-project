@@ -3,7 +3,7 @@
 #include <string.h>
 #include "consts.h"
 #include "macros_table.h"
-#include "input_utils.h"
+#include "io_parsers.h"
 
 
 static Bool line_is_directive(const char *line, const char *directive) {
@@ -45,16 +45,15 @@ static Bool fill_macro_table(FileOperands *file_operands, MacroTable *table) {
             continue;
         } else if (line_is_directive(parsed_row.operand, START_MACRO_DIRECTIVE)) {
             if (parsed_row.parameters_count != 1) {
-                printf("Error: invalid parameters for '%s' in line %d\n",START_MACRO_DIRECTIVE, row_number);
+                printf("Error: invalid parameters for '%s' in line %d\n", START_MACRO_DIRECTIVE, row_number);
                 return FALSE;
             }
-            //TODO: validate macro doesnt already exist
             if (is_macro) {
                 printf("Error: nested macro in line %d\n", row_number);
                 return FALSE;
             }
             if ((tmp_item = get_macro_item(table, parsed_row.parameters[0])) != NULL) {
-                printf("Error: macro '%s' already exists in line %d\n", tmp_item->name,tmp_item->row_number);
+                printf("Error: macro '%s' already exists in line %d\n", tmp_item->name, tmp_item->row_number);
                 return FALSE;
             }
             item = create_macro_item(parsed_row.parameters[0], NULL, row_number, 0);
@@ -81,7 +80,7 @@ static Bool rewrite_macros(FileOperands *file_operands, MacroTable *table, FILE 
     MacroItem *current_item = NULL;
     for (row_number = 0; row_number < file_operands->size; row_number++) {
         parsed_row = file_operands->rows[row_number];
-        raw_line = line_output =  parsed_row.original_line;
+        raw_line = line_output = parsed_row.original_line;
         /* comment line */
         if (raw_line[0] == ';') {
             continue;
@@ -96,11 +95,11 @@ static Bool rewrite_macros(FileOperands *file_operands, MacroTable *table, FILE 
             if (!is_macro) {
                 if (parsed_row.operand == NULL) {
                     line_output = raw_line;
-                    }
-                else if (get_macro_item(table, parsed_row.operand) != NULL) {
+                } else if (get_macro_item(table, parsed_row.operand) != NULL) {
                     current_item = get_macro_item(table, parsed_row.operand);
-                    if(row_number < current_item->row_number){
-                        printf("Error: macro '%s' is used before definition in line %d\n", current_item->name, row_number);
+                    if (row_number < current_item->row_number) {
+                        printf("Error: macro '%s' is used before definition in line %d\n", current_item->name,
+                               row_number);
                         return FALSE;
                     }
                     line_output = string_array_to_string(current_item->value, current_item->value_size);
@@ -111,15 +110,13 @@ static Bool rewrite_macros(FileOperands *file_operands, MacroTable *table, FILE 
                 fputs(line_output, output_file);
             }
 
-            }
+        }
     }
+    return TRUE;
 }
 
-static Bool expand_file_macros(char *input_filename, char *output_filename) {
+static Bool expand_file_macros(FILE *input_file, FILE *output_file) {
     Bool result = TRUE;
-    FILE *input_file = fopen(input_filename, READ_MODE);
-    //TODO: build output file name
-    FILE *output_file = fopen(output_filename, WRITE_MODE);
     MacroTable macro_table = create_macro_table();
     FileOperands *parsed_input_file = parse_file_to_operand_rows(input_file);
     if ((result = fill_macro_table(parsed_input_file, &macro_table))) {
@@ -133,31 +130,34 @@ static Bool expand_file_macros(char *input_filename, char *output_filename) {
     return result;
 }
 
+Bool validate_file_exists(char *filename) {
+    FILE *file = fopen(filename, READ_MODE);
+    if (file == NULL) {
+        printf("Error: file %s does not exist\n", filename);
+        return FALSE;
+    }
+    fclose(file);
+    return TRUE;
+}
+
+static void build_output_filename(char *base_name, char *suffix, char *output_buffer) {
+    strcpy(output_buffer, base_name);
+    strcat(output_buffer, suffix);
+}
+
 Bool expand_macros(char *filenames[], int num_of_files) {
     int i;
-    char filename_with_as_extension[256];
-    char filename_with_am_extension[256];
-    FILE *current_file;
+    char filename_with_as_extension[MAX_FILENAME_LENGTH];
+    char filename_with_am_extension[MAX_FILENAME_LENGTH];
     for (i = 0; i < num_of_files; i++) {
-        /* TODO: separate to new method */
-        /* TODO: check buffer*/
-        strcpy(filename_with_as_extension, filenames[i]);
-        strcat(filename_with_as_extension, AS_FILE_EXTENSION);
-        /*TODO: Output error message */
-        if ((current_file = fopen(filename_with_as_extension, "r")) == NULL) {
-            //print error message for failed file opening
-            printf("Error: Failed to open file %s\n", filename_with_as_extension);
-            continue;
-        }
-
-        strcpy(filename_with_am_extension, filenames[i]);
-        strcat(filename_with_am_extension, AM_FILE_EXTENSION);
-        /*TODO: expand macro */
+        build_output_filename(filenames[i], AM_FILE_EXTENSION, filename_with_am_extension);
+        build_output_filename(filenames[i], AS_FILE_EXTENSION, filename_with_as_extension);
         printf("Opening File: %s\n", filename_with_as_extension);
-        if(expand_file_macros(filename_with_as_extension,filename_with_am_extension)){
+        FILE *input_file = create_file_stream(filename_with_as_extension, READ_MODE);
+        FILE *output_file = create_file_stream(filename_with_am_extension, WRITE_MODE);
+        if (expand_file_macros(input_file, output_file)) {
             printf("File %s expanded successfully\n", filename_with_as_extension);
-        }
-        else{
+        } else {
             printf("Error: Failed to expand file %s\n", filename_with_as_extension);
         }
     }

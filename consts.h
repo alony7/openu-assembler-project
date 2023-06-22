@@ -13,3 +13,4 @@
 #define BASE_ROW_BATCH_SIZE 10
 #define READ_MODE "r"
 #define WRITE_MODE "w"
+#define MAX_FILENAME_LENGTH 256
