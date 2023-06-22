@@ -45,7 +45,7 @@ static Bool fill_macro_table(FileOperands *file_operands, MacroTable *table) {
             continue;
         } else if (line_is_directive(parsed_row.operand, START_MACRO_DIRECTIVE)) {
             if (parsed_row.parameters_count != 1) {
-                printf("Error: invalid parameters for 'mcro' in line %d\n", row_number);
+                printf("Error: invalid parameters for '%s' in line %d\n",START_MACRO_DIRECTIVE, row_number);
                 return FALSE;
             }
             //TODO: validate macro doesnt already exist
@@ -69,23 +69,8 @@ static Bool fill_macro_table(FileOperands *file_operands, MacroTable *table) {
     }
     return TRUE;
 }
-static char *get_rewritten_line(FileOperands *file_operands, OperandRow parsed_row, MacroTable *table) {
-    char *line_output = {0};
-    char *raw_line = {0};
-    MacroItem *current_item = NULL;
-    if (parsed_row.operand == NULL) {
-        line_output = parsed_row.original_line;
-    }
-    else if (get_macro_item(table, parsed_row.operand) != NULL) {
-        current_item = get_macro_item(table, parsed_row.operand);
-        line_output = string_array_to_string(current_item->value, current_item->value_size);
 
-    } else {
-        line_output = parsed_row.original_line;
-    }
-    return line_output;
-}
-//TODO: merge with fill to base file encoder
+//TODO: Check if i need to delete empty lines and comments
 //function to expand the macros in every occurences, based on the macro table
 static Bool rewrite_macros(FileOperands *file_operands, MacroTable *table, FILE *output_file) {
     int row_number = 0;
@@ -109,15 +94,26 @@ static Bool rewrite_macros(FileOperands *file_operands, MacroTable *table, FILE 
             //append line to output file
         else {
             if (!is_macro) {
-                line_output = get_rewritten_line(file_operands, parsed_row, table);
+                if (parsed_row.operand == NULL) {
+                    line_output = raw_line;
+                    }
+                else if (get_macro_item(table, parsed_row.operand) != NULL) {
+                    current_item = get_macro_item(table, parsed_row.operand);
+                    if(row_number < current_item->row_number){
+                        printf("Error: macro '%s' is used before definition in line %d\n", current_item->name, row_number);
+                        return FALSE;
+                    }
+                    line_output = string_array_to_string(current_item->value, current_item->value_size);
+
+                } else {
+                    line_output = raw_line;
+                }
                 fputs(line_output, output_file);
             }
 
             }
     }
 }
-
-
 
 static Bool expand_file_macros(char *input_filename, char *output_filename) {
     Bool result = TRUE;

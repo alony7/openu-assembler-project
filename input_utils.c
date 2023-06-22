@@ -4,15 +4,6 @@
 #include <malloc.h>
 #include "consts.h"
 
-void remove_end_of_line(char *string){
-    int i;
-    for(i=0;i<strlen(string);i++){
-        if(string[i] == '\n'){
-            string[i] = '\0';
-            return;
-        }
-    }
-}
 
 void parse_operand_row(char *line, OperandRow *parsed_row) {
     int i;
@@ -78,13 +69,6 @@ FileOperands *parse_file_to_operand_rows(FILE *file){
     return file_operands;
 }
 
-void remove_row_from_file_operands(FileOperands *file_operands, int row_index){
-    int i;
-    for(i=row_index;i<file_operands->size - 1;i++){
-        file_operands->rows[i] = file_operands->rows[i + 1];
-    }
-    file_operands->size--;
-}
 
 void free_operand_row(OperandRow *row){
     int i;

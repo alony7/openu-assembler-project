@@ -1,4 +1,5 @@
 #pragma once
+
 #include <stdio.h>
 #include "consts.h"
 
@@ -9,12 +10,11 @@ typedef struct OperandRow {
     int parameters_count;
 } OperandRow;
 
-typedef struct FileOperands{
+typedef struct FileOperands {
     OperandRow *rows;
     int size;
 } FileOperands;
 
-void remove_end_of_line(char *string);
 
 void parse_operand_row(char *line, OperandRow *parsed_row);
 
@@ -24,4 +24,3 @@ void free_operand_row(OperandRow *row);
 
 void free_file_operands(FileOperands *file_operands);
 
-void remove_row_from_file_operands(FileOperands *file_operands, int row_index);
