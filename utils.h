@@ -12,6 +12,25 @@ typedef struct ErrInfo {
     char *file_name;
 } ErrInfo;
 
+typedef enum opcodes {
+    MOV = 0,
+    CMP = 1,
+    ADD = 2,
+    SUB = 3,
+    NOT = 4,
+    CLR = 5,
+    LEA = 6,
+    INC = 7,
+    DEC = 8,
+    JMP = 9,
+    BNE = 10,
+    RED = 11,
+    PRN = 12,
+    JSR = 13,
+    RTS = 14,
+    STOP = 15
+} opcodes;
+
 char *string_array_to_string(char **array, int size);
 
 char* duplicate_string(const char* str);

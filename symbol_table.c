@@ -2,6 +2,7 @@
 #include <string.h>
 #include "symbol_table.h"
 #include "consts.h"
+#include "utils.h"
 
 SymbolTable create_symbol_table() {
     SymbolTable table;
@@ -20,13 +21,17 @@ Symbol *create_symbol(char *name, int address, InstructionType type) {
     return symbol;
 }
 
-void add_symbol(SymbolTable *table, Symbol *symbol) {
+Bool add_symbol(SymbolTable *table, Symbol *symbol) {
     if (table->size == table->capacity) {
         table->capacity += INITIAL_SYMBOL_TABLE_CAPACITY;
-        table->symbols = (Symbol *) realloc(table->symbols, sizeof(Symbol) * table->capacity);
+        table->symbols = (Symbol *) realloc(table->symbols, table->capacity * sizeof(Symbol));
+        if (table->symbols == NULL) {
+            return FALSE;
+        }
     }
     table->symbols[table->size] = *symbol;
     table->size++;
+    return TRUE;
 }
 
 void free_symbol(Symbol *symbol) {

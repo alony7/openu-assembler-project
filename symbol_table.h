@@ -1,6 +1,8 @@
 #pragma once
 
 
+#include "utils.h"
+
 typedef enum InstructionType {
     DATA,
     STRING,
@@ -32,7 +34,7 @@ typedef struct SymbolTable {
 
 SymbolTable create_symbol_table();
 
-void add_symbol(SymbolTable *table, Symbol *symbol);
+Bool add_symbol(SymbolTable *table, Symbol *symbol);
 
 Symbol *get_symbol(SymbolTable *table, char *name);
 
