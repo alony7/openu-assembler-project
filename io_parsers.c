@@ -14,7 +14,10 @@ FILE *create_file_stream(char *file_name, char *mode) {
 }
 
 void parse_operand_row(char *line, OperandRow *parsed_row) {
-    int i;
+    char *operand;
+    char *parameter;
+    char **parameters;
+    int parameters_count;
     const char *delimiters = " ,\n\t";
     strcpy(parsed_row->original_line, line);
 
@@ -25,13 +28,12 @@ void parse_operand_row(char *line, OperandRow *parsed_row) {
         parsed_row->parameters_count = 0;
         return;
     }
-
-    char *operand = strtok(line, delimiters);
+    operand = strtok(line, delimiters);
     parsed_row->operand = malloc(strlen(operand) + 1);
     strcpy(parsed_row->operand, operand);
-    char *parameter = strtok(NULL, delimiters);
-    int parameters_count = 0;
-    char **parameters = malloc(sizeof(char *));
+    parameter = strtok(NULL, delimiters);
+    parameters_count = 0;
+    parameters = malloc(sizeof(char *));
     while (parameter != NULL) {
         parameters_count++;
         parameters = realloc(parameters, parameters_count * sizeof(char *));
@@ -47,12 +49,12 @@ static FileOperands *create_file_operands(){
     FileOperands *file_operands = malloc(sizeof(FileOperands));
     file_operands->size = 0;
     file_operands->rows = NULL;
+    file_operands->file_name = NULL;
     return file_operands;
 }
 
 /*TODO: explain the exercise allowed max rows, and maybe add limit*/
 FileOperands *parse_file_to_operand_rows(FILE *file){
-    int i;
     FileOperands *file_operands = create_file_operands();
     OperandRow *rows = malloc(BASE_ROW_BATCH_SIZE * sizeof(OperandRow));
     OperandRow *current_row;

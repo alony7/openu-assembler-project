@@ -1,8 +1,8 @@
 CC = gcc
 COMP_FLAG = -ansi -Wall -pedantic -std=c90
 
-all: assembler.o
-	$(CC) assembler.o io_parsers.o pre_process.o utils.o macros_table.o $(COMP_FLAG) $(DEBUG_FLAG) $(OBJS) -o $@
+all: assembler.o io_parsers.o pre_process.o utils.o macros_table.o
+	$(CC) assembler.o io_parsers.o pre_process.o utils.o macros_table.o $(COMP_FLAG) $(DEBUG_FLAG) $(OBJS) -o assembler
 
 assembler.o: assembler.c
 	$(CC) -c $(COMP_FLAG) $*.c -o $@
@@ -20,4 +20,4 @@ macros_table.o: macros_table.c
 	$(CC) -c $(COMP_FLAG) $*.c -o $@
 
 clean:
-	-rm assembler.o
+	-rm *.o

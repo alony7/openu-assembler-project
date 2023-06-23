@@ -1,5 +1,4 @@
 #include <stdio.h>
-#include <malloc.h>
 #include <string.h>
 #include "consts.h"
 #include "macros_table.h"
@@ -67,7 +66,6 @@ static Bool fill_macro_table(FileOperands *file_operands, MacroTable *table) {
 }
 
 /*TODO: Check if i need to delete empty lines and comments*/
-/*function to expand the macros in every occurences, based on the macro table*/
 static Bool rewrite_macros(FileOperands *file_operands, MacroTable *table, FILE *output_file) {
     int row_number = 0;
     Bool is_macro = FALSE;
@@ -110,8 +108,15 @@ static Bool rewrite_macros(FileOperands *file_operands, MacroTable *table, FILE 
     return TRUE;
 }
 
-static Bool expand_file_macros(FILE *input_file, FILE *output_file) {
+static Bool expand_file_macros(char *input_filename, char *output_filename) {
+    FILE *input_file, *output_file;
     Bool result = TRUE;
+    input_file = create_file_stream(input_filename, READ_MODE);
+    output_file = create_file_stream(output_filename, WRITE_MODE);
+    if (!output_file) {
+        printf("Error: Failed to create file %s\n", output_filename);
+        return FALSE;
+    }
     MacroTable macro_table = create_macro_table();
     FileOperands *parsed_input_file = parse_file_to_operand_rows(input_file);
     if ((result = fill_macro_table(parsed_input_file, &macro_table))) {
@@ -125,15 +130,6 @@ static Bool expand_file_macros(FILE *input_file, FILE *output_file) {
     return result;
 }
 
-Bool validate_file_exists(char *filename) {
-    FILE *file = fopen(filename, READ_MODE);
-    if (file == NULL) {
-        printf("Error: file %s does not exist\n", filename);
-        return FALSE;
-    }
-    fclose(file);
-    return TRUE;
-}
 
 static void build_output_filename(char *base_name, char *suffix, char *output_buffer) {
     strcpy(output_buffer, base_name);
@@ -148,13 +144,8 @@ Bool expand_macros(char *filenames[], int num_of_files) {
         build_output_filename(filenames[i], AM_FILE_EXTENSION, filename_with_am_extension);
         build_output_filename(filenames[i], AS_FILE_EXTENSION, filename_with_as_extension);
         printf("Opening File: %s\n", filename_with_as_extension);
-        FILE *input_file = create_file_stream(filename_with_as_extension, READ_MODE);
-        FILE *output_file = create_file_stream(filename_with_am_extension, WRITE_MODE);
-        if (!output_file) {
-            printf("Error: Failed to create file %s\n", filename_with_am_extension);
-            continue;
-        }
-        if (expand_file_macros(input_file, output_file) && input_file) {
+
+        if (expand_file_macros(filename_with_as_extension, filename_with_am_extension)) {
             printf("File %s expanded successfully\n", filename_with_as_extension);
         } else {
             printf("Error: Failed to expand file %s\n", filename_with_as_extension);

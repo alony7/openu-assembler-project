@@ -13,3 +13,33 @@ char *string_array_to_string(char **array, int size){
     return string;
 }
 
+char* duplicate_string(const char* str) {
+    char *duplicate;
+    if (str == NULL) {
+        return NULL;
+    }
+
+    duplicate = malloc(strlen(str) + 1);
+
+    if (duplicate == NULL) {
+        return NULL;
+    }
+
+    strcpy(duplicate, str);
+    return duplicate;
+}
+
+
+
+void export_error(ErrInfo *err_info) {
+    fprintf(stderr,"Error in file %s at line %d: %s\n", err_info->file_name, err_info->line_number, err_info->error_message);
+
+}
+
+ErrInfo *create_error_info(int line_number, char *error_message, char *file_name) {
+    ErrInfo *err_info = malloc(sizeof(ErrInfo));
+    err_info->line_number = line_number;
+    err_info->error_message = duplicate_string(error_message);
+    err_info->file_name = duplicate_string(file_name);
+    return err_info;
+}

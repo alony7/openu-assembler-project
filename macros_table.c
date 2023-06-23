@@ -11,7 +11,7 @@ MacroTable create_macro_table(){
 }
 
 MacroItem *create_macro_item(char *name, char **value, int row_number,int value_size){
-    MacroItem *item = malloc(sizeof(MacroItem));
+    MacroItem *item = (MacroItem*) malloc(sizeof(MacroItem));
     item->name = malloc(strlen(name) + 1);
     strcpy(item->name, name);
     item->value = value;
@@ -80,7 +80,7 @@ Bool append_macro_item_value(MacroItem *item, char *value_to_append) {
         if (item->value == NULL) {
             return FALSE;
         }
-        item->value[0] = strdup(value_to_append);
+        item->value[0] = duplicate_string(value_to_append);
         item->value[1] = NULL;
     } else {
         for (i = 0; item->value[i] != NULL; i++)
@@ -92,7 +92,7 @@ Bool append_macro_item_value(MacroItem *item, char *value_to_append) {
         }
 
         item->value = new_value;
-        item->value[i] = strdup(value_to_append);
+        item->value[i] = duplicate_string(value_to_append);
         item->value[i + 1] = NULL;
     }
 

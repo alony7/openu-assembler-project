@@ -13,6 +13,7 @@ typedef struct OperandRow {
 typedef struct FileOperands {
     OperandRow *rows;
     int size;
+    char *file_name;
 } FileOperands;
 
 FILE *create_file_stream(char *file_name, char *mode);

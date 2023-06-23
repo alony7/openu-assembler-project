@@ -1,5 +1,6 @@
 
 #include <string.h>
+#include <stdlib.h>
 #include "macros_table.h"
 #include "pre_process.h"
 
@@ -11,17 +12,8 @@ static void execute_program(int argc, char *argv[]) {
     /*TODO: extract to function*/
     if(argc == 1){
         printf("No arguments were given. Exiting...\n");
-        return;
+        exit(1);
     }
-
-    /*throw error for any filename given that ends with .as*/
-    for( i = 0; i < argc -1; i++){
-        if(strstr(argv[i],".as") != NULL){
-            printf("Error: file name cannot end with .as\n");
-            return;
-        }
-    }
-
 
     /* run macro expand */
     expand_macros(argv, argc - 1);
@@ -35,6 +27,9 @@ static void execute_program(int argc, char *argv[]) {
 
 /*TODO: add detailed comment*/
 /* TODO: wrap malloc */
+/* TODO: wrap free */
+/* TODO: errors to stderr */
+/* TODO: add pointer casting to all mallocs */
 int main(int argc, char *argv[]) {
     execute_program(argc, argv);
     return 0;
