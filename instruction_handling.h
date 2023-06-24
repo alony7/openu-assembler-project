@@ -56,7 +56,8 @@ typedef enum Register {
     R4 = 4,
     R5 = 5,
     R6 = 6,
-    R7 = 7
+    R7 = 7,
+    INVALID_REGISTER = -1
 } Register;
 
 InstructionType get_instruction_type(char *instruction);
