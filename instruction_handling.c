@@ -58,8 +58,7 @@ AddressingType get_addressing_type(char *operand) {
     }
 }
 
-/* TODO: make this work with negative numbers
-* TODO: make this work with size check*/
+/* TODO: make this work with size check*/
 void parse_int_to_word(Word *word, int num, Bool add_ARE) {
     if (add_ARE) {
         code_number_into_word_bits(word, ABSOLUTE, 0, 2);
@@ -73,7 +72,6 @@ Bool address_data_instruction(OperandRow *row, Word *data_image, int *dc) {
     /* TODO: valdiate original row is correctly formatted */
     int i;
     for (i = 0; i < row->parameters_count; i++) {
-        /* TODO: I doubt this works, need to check int parse */
         parse_int_to_word(&(data_image[*dc]), parse_int(row->parameters[i]), FALSE);
         (*dc)++;
     }
