@@ -62,17 +62,8 @@ typedef enum Register {
 
 InstructionType get_instruction_type(char *instruction);
 
-void parse_registers_to_word(Word *word, Register src_register, Register dest_register);
 
-void empty_word(Word *word);
 
-void parse_operand_to_word(Word *word, Opcode opcode,  AddressingType src_op, AddressingType dest_op);
-
-Bool is_register(char *operand);
-
-Register get_register(char *operand);
-
-Bool is_label(char *operand);
 
 
 Bool address_code_instruction(OperandRow *row, Word *code_image, int *ic);
@@ -81,4 +72,3 @@ Bool address_string_instruction(OperandRow *row, Word *data_image, int *dc);
 
 Bool address_data_instruction(OperandRow *row, Word *data_image, int *dc);
 
-int parse_int(char *str);

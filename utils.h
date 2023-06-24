@@ -1,5 +1,6 @@
 #pragma once
 #include "io_parsers.h"
+#include "instruction_handling.h"
 
 typedef enum Bool {
     FALSE = 0,
@@ -46,4 +47,16 @@ Bool is_comment(char *operand);
 
 Bool is_empty_row(char *row);
 
+Opcode get_opcode(char *command);
 
+Register get_register(char *operand);
+
+Bool is_register(char *operand);
+
+Bool is_label(char *operand);
+
+int parse_int(char *str);
+
+void code_number_into_word_bits(Word *word, int number, int offset, int length);
+
+OpcodeMode get_opcode_possible_modes(Opcode opcode);

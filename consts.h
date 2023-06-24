@@ -38,3 +38,4 @@
 #define STOP_COMMAND "stop"
 #define LABEL_TERMINATOR ':'
 #define COMMENT_PREFIX ';'
+#define REGISTER_PREFIX '@'
