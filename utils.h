@@ -12,7 +12,7 @@ typedef struct ErrInfo {
     char *file_name;
 } ErrInfo;
 
-typedef enum opcodes {
+typedef enum Opcode {
     MOV = 0,
     CMP = 1,
     ADD = 2,
@@ -28,8 +28,9 @@ typedef enum opcodes {
     PRN = 12,
     JSR = 13,
     RTS = 14,
-    STOP = 15
-} opcodes;
+    STOP = 15,
+    INVALID_OPCODE = -1
+} Opcode;
 
 char *string_array_to_string(char **array, int size);
 
@@ -38,3 +39,9 @@ char* duplicate_string(const char* str);
 void export_error(ErrInfo *err_info);
 
 ErrInfo *create_error_info(int line_number, char *error_message, char *file_name);
+
+Bool is_integer(char *str);
+
+Bool is_comment(char *operand);
+
+

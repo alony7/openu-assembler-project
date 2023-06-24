@@ -4,75 +4,80 @@
 
 #include <string.h>
 #include "first_step.h"
+#include "instruction_handling.h"
 
 
-static Bool is_label(char *operand){
-    return operand[strlen(operand) - 1] == ':';
+Bool handle_row(SymbolTable table, OperandRow *row, Word *data_image, Word *code_image, int *ic, int *dc) {
+    int i;
+    Symbol *symbol;
+    InstructionType instruction_type, label_instruction_type;
+    if((instruction_type = get_instruction_type(row->operand))==LABEL){
+        /*TODO:  validate label doesnt exist */
+        label_instruction_type = get_instruction_type(row->parameters[0]);
+        switch (label_instruction_type) {
+            case (DATA):
+                symbol = create_symbol(row->operand, *dc, DATA);
+                add_symbol(&table, symbol);
+                break;
+            case (STRING):
+                symbol = create_symbol(row->operand, *dc, STRING);
+                add_symbol(&table, symbol);
+                break;
+            case (COMMAND):
+                symbol = create_symbol(row->operand, *ic, COMMAND);
+                add_symbol(&table, symbol);
+                break;
+            case (COMMENT):
+                return TRUE;
+            default:
+                /* TODO: throw error */
+        }
+       symbol = create_symbol(row->operand, label_instruction_type == COMMAND?*ic:*dc, COMMAND);
+       add_symbol(&table, symbol);
+       row->operand = row->parameters[0];
+       for(i=0;i<row->parameters_count-1;i++){
+           row->parameters[i] = row->parameters[i+1];
+       }
+    };
+    if(instruction_type == COMMENT) {
+        return TRUE;
+    }else if(instruction_type == DATA){
+        address_data_instruction(row,data_image,dc);
+    }else if(instruction_type == STRING) {
+        address_string_instruction(row,data_image,dc);
+    }else if(instruction_type == LABEL) {
+        /* TODO: throw error for double label */
+    }else if(instruction_type == EXTERN) {
+        /* TODO: add to extern table */
+    }else if(instruction_type == ENTRY) {
+        /* TODO: add to entry table */
+    }else if(instruction_type == COMMAND){
+        address_code_instruction(row,code_image,ic);
+    }else{
+        return FALSE;
+    }
+    return TRUE;
 }
 
-InstructionType get_instruction_type(char *instruction){
-    if(strcmp(instruction,".data") == 0){
-        return DATA;
-    }
-    if(strcmp(instruction,".string") == 0){
-        return STRING;
-    }
-    if(strcmp(instruction,".extern") == 0){
-        return EXTERN;
-    }
-    if(strcmp(instruction,".entry") == 0){
-        return ENTRY;
-    }
-    return COMMAND;
-}
-
-
-Bool first_step(SymbolTable table,FileOperands *file_operands, char *file_name){
+Bool first_step_process(SymbolTable table, FileOperands *file_operands, char *file_name) {
     int ic = 0;
-    int dc= 0;
-    Bool label_flag = FALSE;
+    int dc = 0;
+    Word data_image[MEMORY_SIZE];
+    Word code_image[MEMORY_SIZE];
+    Bool is_successful = TRUE;
     int i;
     OperandRow *current_row;
-    Symbol *symbol;
-    InstructionType instruction_type;
     FILE *file = create_file_stream(file_name, "r");
     if (file == NULL) {
         return FALSE;
     }
     file_operands = parse_file_to_operand_rows(file);
-    for(i=0;i<file_operands->size;i++){
+    for (i = 0; i < file_operands->size; i++) {
         current_row = &file_operands->rows[i];
-        if(is_label(current_row->operand)){
-            label_flag = TRUE;
-            instruction_type = get_instruction_type(current_row->parameters[0]);
-            //TODO: check if symbol exists
-            if(instruction_type == DATA || instruction_type == STRING){
-                symbol = create_symbol(current_row->operand, dc,instruction_type );
-                if(!add_symbol(&table, symbol)){
-                    return FALSE;
-                }
-                dc += strlen(current_row->original_line);
-            }else if( instruction_type == EXTERN || instruction_type == ENTRY){
-                if(instruction_type == EXTERN){
-                    symbol = create_symbol(current_row->operand, 0, instruction_type);
-                    if(!add_symbol(&table, symbol)){
-                        return FALSE;
-                    }
-                }
-                else{
-                    symbol = get_symbol(&table, current_row->operand);
-                    if(symbol == NULL){
-                        return FALSE;
-                    }
-                    symbol->type = ENTRY;
-                }
-        }
-    }else{
-
-        }
+        is_successful = handle_row(table, current_row,data_image,code_image, &ic, &dc) && is_successful;
     }
 
     fclose(file);
-    return TRUE;
+    return is_successful;
 }
 

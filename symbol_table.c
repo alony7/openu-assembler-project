@@ -3,6 +3,7 @@
 #include "symbol_table.h"
 #include "consts.h"
 #include "utils.h"
+#include "instruction_handling.h"
 
 SymbolTable create_symbol_table() {
     SymbolTable table;

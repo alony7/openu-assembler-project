@@ -1,6 +1,7 @@
 #include <malloc.h>
 #include <string.h>
 #include "utils.h"
+#include "instruction_handling.h"
 
 char *string_array_to_string(char **array, int size){
     int i;
@@ -42,4 +43,19 @@ ErrInfo *create_error_info(int line_number, char *error_message, char *file_name
     err_info->error_message = duplicate_string(error_message);
     err_info->file_name = duplicate_string(file_name);
     return err_info;
+}
+
+
+Bool is_integer(char *str) {
+    int i;
+    for (i = 0; i < strlen(str); i++) {
+        if (str[i] < '0' || str[i] > '9') {
+            return FALSE;
+        }
+    }
+    return TRUE;
+}
+
+Bool is_comment(char *instruction) {
+    return instruction[0] == COMMENT_PREFIX;
 }

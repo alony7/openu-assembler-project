@@ -2,22 +2,7 @@
 
 
 #include "utils.h"
-
-typedef enum InstructionType {
-    DATA,
-    STRING,
-    ENTRY,
-    EXTERN,
-    COMMAND,
-    NONE
-} InstructionType;
-
-typedef enum AddressingType {
-    IMMEDIATE,
-    DIRECT,
-    REGISTER,
-    ERROR
-} AddressingType;
+#include "instruction_handling.h"
 
 
 typedef struct Symbol {
@@ -43,6 +28,7 @@ void free_symbol_table(SymbolTable *table);
 void free_symbol(Symbol *symbol);
 
 Symbol *create_symbol(char *name, int address, InstructionType type);
+
 
 
 

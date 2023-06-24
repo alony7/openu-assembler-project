@@ -24,7 +24,8 @@ static void execute_program(int argc, char *argv[]) {
 
 
     /* run first step assemble */
-    first_step(symbol_table,file_operands,"C:\\Users\\alons\\vm\\exercises\\mm14\\openu-assembler-project\\test-files\\test1.am");
+    first_step_process(symbol_table, file_operands,
+                       "C:\\Users\\alons\\vm\\exercises\\mm14\\openu-assembler-project\\test-files\\test1.am");
 
     /* run second step assemble */
 }
@@ -34,6 +35,9 @@ static void execute_program(int argc, char *argv[]) {
 /* TODO: wrap free */
 /* TODO: errors to stderr */
 /* TODO: add pointer casting to all mallocs */
+/* TODO: move function declaratios to head of headers */
+/* TODO: remove export for internally used functions */
+/* add string termination to all strings */
 int main(int argc, char *argv[]) {
     execute_program(argc, argv);
     return 0;
