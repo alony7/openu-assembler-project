@@ -3,7 +3,8 @@
 #define AS_FILE_EXTENSION ".as"
 #define AM_FILE_EXTENSION ".am"
 
-#define MEMORY_START 100
+/* TODO: update to 100 */
+#define MEMORY_OFFSET 0
 #define MEMORY_SIZE 1024
 #define WORD_SIZE 12
 #define START_MACRO_DIRECTIVE "mcro"

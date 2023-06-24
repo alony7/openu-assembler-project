@@ -11,15 +11,26 @@ void empty_word(Word *word) {
 }
 
 void code_number_into_word_bits(Word *word, int number,int offset, int length){
-    int i;
+    int i = 0;
+    Bool is_negative = FALSE;
+    if(number < 0){
+        is_negative = TRUE;
+        number = -number;
+    }
     for(i = 0; i < length; i++){
         word->bits[offset + i] = (number >> i) & 1;
+    }
+    if(is_negative){
+        for(i = 0; i < length; i++){
+            word->bits[offset + i] = !word->bits[offset + i];
+        }
+        word->bits[offset] = TRUE;
     }
 }
 
 /* CHeck error */
 Register get_register(char *operand){
-    return (Register) (operand[1] - '0');
+    return (Register) (operand[2] - '0');
 }
 
 void parse_registers_to_word(Word *word, Register src_register, Register dest_register) {
@@ -89,8 +100,9 @@ Opcode get_opcode(char *command) {
         return STOP;
     return INVALID_OPCODE;
 }
-/* TODO: make this work with negative numbers */
-Word parse_int_to_word(Word *word,int num,Bool add_ARE) {
+/* TODO: make this work with negative numbers
+ * TODO: make this work with size check*/
+void parse_int_to_word(Word *word,int num,Bool add_ARE) {
     if(add_ARE){
         code_number_into_word_bits(word, ABSOLUTE, 0, 2);
         code_number_into_word_bits(word, num, 2, 10);
@@ -104,7 +116,7 @@ Bool address_data_instruction(OperandRow *row, Word *data_image, int *dc) {
     int i;
     for (i = 0; i < row->parameters_count; i++) {
         /* TODO: I doubt this works, need to check int parse */
-         parse_int_to_word(&(data_image[*dc]),(int) *(row->parameters[i]),FALSE);
+         parse_int_to_word(&(data_image[*dc]),parse_int(row->parameters[i]),FALSE);
         (*dc)++;
     }
     return TRUE;
@@ -121,21 +133,27 @@ Bool address_string_instruction(OperandRow *row, Word *data_image, int *dc) {
     return TRUE;
 }
 
-void handle_operand(OperandRow *row, Word *code_image, int *ic,char *raw_operand,AddressingType addressing_type) {
+void handle_operand(OperandRow *row, Word *code_image, int *ic,char *raw_operand,AddressingType addressing_type,OperandLocation location){
     if (addressing_type == IMMEDIATE){
-        parse_int_to_word(code_image + *ic,(int)*(raw_operand),TRUE);
+        parse_int_to_word(code_image + *ic,parse_int(raw_operand),TRUE);
         (*ic)++;
     }else if(addressing_type == DIRECT){
         empty_word(&code_image[*ic]);
         (*ic)++;
     }else{
-        parse_registers_to_word(&(code_image[*ic]),*raw_operand,0);
+        Register reg = get_register(raw_operand);
+        if(location == DESTINATION) {
+            parse_registers_to_word(&(code_image[*ic]), 0, reg);
+        }else{
+            parse_registers_to_word(&(code_image[*ic]), reg, 0);
+        }
         (*ic)++;
     }
 }
 
 Bool address_code_instruction(OperandRow *row, Word *code_image, int *ic) {
     /* TODO: valdiate original row is correctly formatted */
+    Register src_register, dest_register;
     Opcode op_num = get_opcode(row->operand);
     AddressingType src_op , dest_op;
     char* raw_src_operand = row->parameters_count ? row->parameters[0] : NULL;
@@ -148,14 +166,16 @@ Bool address_code_instruction(OperandRow *row, Word *code_image, int *ic) {
     if(!(row->parameters_count)) {
         return TRUE;
     }
-    handle_operand(row,code_image,ic,raw_src_operand,src_op);
+    handle_operand(row,code_image,ic,raw_src_operand,src_op,SOURCE);
     if(row->parameters_count == 1) {
         return TRUE;
     }
     if(!(src_op == REGISTER && dest_op == REGISTER)){
-        handle_operand(row,code_image,ic,raw_dest_operand,dest_op);
+        handle_operand(row,code_image,ic,raw_dest_operand,dest_op,DESTINATION);
     }else{
-        parse_registers_to_word(&(code_image[*ic - 1]),*raw_src_operand,*raw_dest_operand);
+        src_register = get_register(raw_src_operand);
+        dest_register = get_register(raw_dest_operand);
+        parse_registers_to_word(&(code_image[*ic - 1]),src_register,dest_register);
     }
     return TRUE;
 }
@@ -185,4 +205,8 @@ InstructionType get_instruction_type(char *instruction) {
     }
 }
 
-
+int parse_int(char *str) {
+    int num;
+    sscanf(str, "%d", &num);
+    return num;
+}

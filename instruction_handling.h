@@ -1,10 +1,10 @@
 #pragma once
 #include "utils.h"
-#include "symbol_table.h"
 
+//TODO: change to bool
 typedef struct
 {
-    Bool bits[WORD_SIZE];
+    int bits[WORD_SIZE];
 } Word;
 
 typedef enum OperandLocation {
@@ -67,3 +67,5 @@ Bool address_code_instruction(OperandRow *row, Word *code_image, int *ic);
 Bool address_string_instruction(OperandRow *row, Word *data_image, int *dc);
 
 Bool address_data_instruction(OperandRow *row, Word *data_image, int *dc);
+
+int parse_int(char *str);

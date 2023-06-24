@@ -7,11 +7,25 @@
 #include "instruction_handling.h"
 
 
+
+static void add_ic_to_all__data_addresses(SymbolTable *table, int ic){
+    Symbol *symbol;
+    int i;
+    for(i=0;i<table->size;i++){
+        symbol = &(table->symbols[i]);
+        if(symbol->type == DATA || symbol->type == STRING){
+            symbol->address += ic;
+        }
+    }
+
+}
+
 Bool handle_row(SymbolTable table, OperandRow *row, Word *data_image, Word *code_image, int *ic, int *dc) {
     int i;
     Symbol *symbol;
     InstructionType instruction_type, label_instruction_type;
     if((instruction_type = get_instruction_type(row->operand))==LABEL){
+        row->operand[strlen(row->operand)-1] = '\0';
         /*TODO:  validate label doesnt exist */
         label_instruction_type = get_instruction_type(row->parameters[0]);
         switch (label_instruction_type) {
@@ -32,12 +46,13 @@ Bool handle_row(SymbolTable table, OperandRow *row, Word *data_image, Word *code
             default:
                 /* TODO: throw error */
         }
-       symbol = create_symbol(row->operand, label_instruction_type == COMMAND?*ic:*dc, COMMAND);
-       add_symbol(&table, symbol);
        row->operand = row->parameters[0];
        for(i=0;i<row->parameters_count-1;i++){
            row->parameters[i] = row->parameters[i+1];
        }
+       row->parameters_count--;
+       row->parameters[i] = NULL;
+       instruction_type = label_instruction_type;
     };
     if(instruction_type == COMMENT) {
         return TRUE;
@@ -59,8 +74,11 @@ Bool handle_row(SymbolTable table, OperandRow *row, Word *data_image, Word *code
     return TRUE;
 }
 
+
+
+
 Bool first_step_process(SymbolTable table, FileOperands *file_operands, char *file_name) {
-    int ic = 0;
+    int ic = MEMORY_OFFSET;
     int dc = 0;
     Word data_image[MEMORY_SIZE];
     Word code_image[MEMORY_SIZE];
@@ -75,6 +93,7 @@ Bool first_step_process(SymbolTable table, FileOperands *file_operands, char *fi
     for (i = 0; i < file_operands->size; i++) {
         current_row = &file_operands->rows[i];
         is_successful = handle_row(table, current_row,data_image,code_image, &ic, &dc) && is_successful;
+        add_ic_to_all__data_addresses(&table,ic);
     }
 
     fclose(file);

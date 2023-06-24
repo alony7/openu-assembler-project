@@ -49,6 +49,9 @@ ErrInfo *create_error_info(int line_number, char *error_message, char *file_name
 Bool is_integer(char *str) {
     int i;
     for (i = 0; i < strlen(str); i++) {
+        if(i==0 && ((str[i] == '-') || (str[i] == '+'))){
+            continue;
+        }
         if (str[i] < '0' || str[i] > '9') {
             return FALSE;
         }

@@ -25,7 +25,7 @@ static void execute_program(int argc, char *argv[]) {
 
     /* run first step assemble */
     first_step_process(symbol_table, file_operands,
-                       "C:\\Users\\alons\\vm\\exercises\\mm14\\openu-assembler-project\\test-files\\test1.am");
+                       "C:\\Users\\alons\\vm\\exercises\\mm14\\openu-assembler-project\\test-files\\work1.am");
 
     /* run second step assemble */
 }
