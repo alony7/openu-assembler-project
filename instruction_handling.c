@@ -12,20 +12,22 @@ void empty_word(Word *word) {
 
 void code_number_into_word_bits(Word *word, int number,int offset, int length){
     int i = 0;
+    unsigned int twos_complement = 0;
     Bool is_negative = FALSE;
+    number = number & ((1 << length) - 1);
     if(number < 0){
         is_negative = TRUE;
-        number = -number;
+        number = (1 << length) + number;
     }
     for(i = 0; i < length; i++){
         word->bits[offset + i] = (number >> i) & 1;
     }
-    if(is_negative){
-        for(i = 0; i < length; i++){
-            word->bits[offset + i] = !word->bits[offset + i];
-        }
-        word->bits[offset] = TRUE;
-    }
+//    if(is_negative){
+//        for(i = 0; i < length; i++){
+//            word->bits[offset + i] = !word->bits[offset + i];
+//        }
+//        word->bits[offset] = TRUE;
+//    }
 }
 
 /* CHeck error */
@@ -122,6 +124,57 @@ Bool address_data_instruction(OperandRow *row, Word *data_image, int *dc) {
     return TRUE;
 }
 
+void build_opcode_mode(int src_is_immediate, int src_is_direct,int src_is_register,int dest_is_immediate,
+                       int dest_is_direct,int dest_is_register, OpcodeMode *opcode_mode) {
+    opcode_mode->src_op.is_register = src_is_register;
+    opcode_mode->src_op.is_direct = src_is_direct;
+    opcode_mode->src_op.is_immediate = src_is_immediate;
+    opcode_mode->dest_op.is_register = dest_is_register;
+    opcode_mode->dest_op.is_direct = dest_is_direct;
+    opcode_mode->dest_op.is_immediate = dest_is_immediate;
+}
+
+static OpcodeMode get_opcode_modes(Opcode opcode){
+    OpcodeMode opcode_mode = {0};
+    ParameterMode src_mode = {0};
+    ParameterMode dest_mode = {0};
+    opcode_mode.src_op = src_mode;
+    opcode_mode.dest_op = dest_mode;
+    switch (opcode){
+        case MOV:
+        case ADD:
+        case SUB:
+            build_opcode_mode(TRUE,TRUE,TRUE,FALSE,TRUE,TRUE,&opcode_mode);
+            break;
+        case CMP:
+            build_opcode_mode(TRUE,TRUE,TRUE,TRUE,TRUE,TRUE,&opcode_mode);
+            break;
+        case NOT:
+        case CLR:
+        case INC:
+        case DEC:
+        case JMP:
+        case BNE:
+        case RED:
+        case JSR:
+            build_opcode_mode(FALSE,FALSE,FALSE,FALSE,TRUE,TRUE,&opcode_mode);
+            break;
+        case LEA:
+            build_opcode_mode(FALSE,TRUE,FALSE,FALSE,TRUE,TRUE,&opcode_mode);
+            break;
+        case PRN:
+            build_opcode_mode(TRUE,TRUE,TRUE,FALSE,FALSE,FALSE,&opcode_mode);
+            break;
+        case RTS:
+        case STOP:
+            build_opcode_mode(FALSE,FALSE,FALSE,FALSE,FALSE,FALSE,&opcode_mode);
+            break;
+        default:
+            build_opcode_mode(FALSE,FALSE,FALSE,FALSE,FALSE,FALSE,&opcode_mode);
+    }
+    return opcode_mode;
+}
+
 Bool address_string_instruction(OperandRow *row, Word *data_image, int *dc) {
     int i, j;
     /* TODO: valdiate original row is correctly formatted */
@@ -151,32 +204,62 @@ void handle_operand(OperandRow *row, Word *code_image, int *ic,char *raw_operand
     }
 }
 
+Bool opcode_has_source(OpcodeMode opcode_mode){
+    return opcode_mode.src_op.is_direct || opcode_mode.src_op.is_immediate || opcode_mode.src_op.is_register;
+}
+
+Bool opcode_has_destination(OpcodeMode opcode_mode){
+    return opcode_mode.dest_op.is_direct || opcode_mode.dest_op.is_immediate || opcode_mode.dest_op.is_register;
+}
+
 Bool address_code_instruction(OperandRow *row, Word *code_image, int *ic) {
     /* TODO: valdiate original row is correctly formatted */
+    char *raw_src_operand, *raw_dest_operand;
+    AddressingType src_op , dest_op;
     Register src_register, dest_register;
     Opcode op_num = get_opcode(row->operand);
-    AddressingType src_op , dest_op;
-    char* raw_src_operand = row->parameters_count ? row->parameters[0] : NULL;
-    char* raw_dest_operand = row->parameters_count > 1 ? row->parameters[1] : NULL;
-    /*TODO: check if op_num is valid */
-    src_op = row->parameters_count? get_addressing_type(row->parameters[0]): NO_ADD_VALUE;
-    dest_op = row->parameters_count >1? get_addressing_type(row->parameters[1]): NO_ADD_VALUE;
+    OpcodeMode op_mode = get_opcode_modes(op_num);
+    if(row->parameters_count ==2){
+        raw_src_operand = row->parameters[0] ;
+        raw_dest_operand =  row->parameters[1] ;
+        /*TODO: check if op_num is valid */
+        src_op = get_addressing_type(raw_src_operand);
+        dest_op =  get_addressing_type(raw_dest_operand);
+
+    }else if(opcode_has_destination(op_mode)){
+        raw_dest_operand =  row->parameters[0] ;
+        src_op = NO_VALUE;
+        dest_op =  get_addressing_type(raw_dest_operand);
+    }else if(opcode_has_source(op_mode)){
+        raw_src_operand = row->parameters[0] ;
+        src_op = get_addressing_type(raw_src_operand);
+        dest_op = NO_VALUE;
+    }else{
+        src_op = NO_VALUE;
+        dest_op = NO_VALUE;
+    }
     parse_operand_to_word(code_image + *ic, op_num,src_op,dest_op);
     (*ic)++;
-    if(!(row->parameters_count)) {
+    if(row->parameters_count == 0) {
         return TRUE;
-    }
-    handle_operand(row,code_image,ic,raw_src_operand,src_op,SOURCE);
-    if(row->parameters_count == 1) {
-        return TRUE;
-    }
-    if(!(src_op == REGISTER && dest_op == REGISTER)){
-        handle_operand(row,code_image,ic,raw_dest_operand,dest_op,DESTINATION);
+    }else if (row->parameters_count == 1 ){
+        if(src_op == NO_VALUE){
+            handle_operand(row,code_image,ic,raw_dest_operand,dest_op,DESTINATION);
+        }else{
+            handle_operand(row,code_image,ic,raw_src_operand,src_op,SOURCE);
+        }
     }else{
-        src_register = get_register(raw_src_operand);
-        dest_register = get_register(raw_dest_operand);
-        parse_registers_to_word(&(code_image[*ic - 1]),src_register,dest_register);
+        handle_operand(row,code_image,ic,raw_src_operand,src_op,SOURCE);
+        if(!(src_op == REGISTER && dest_op == REGISTER)){
+            handle_operand(row,code_image,ic,raw_dest_operand,dest_op,DESTINATION);
+        }else{
+            src_register = get_register(raw_src_operand);
+            dest_register = get_register(raw_dest_operand);
+            parse_registers_to_word(&(code_image[*ic - 1]),src_register,dest_register);
+        }
     }
+
+
     return TRUE;
 }
 
@@ -186,7 +269,9 @@ Bool is_label(char *instruction) {
 
 
 InstructionType get_instruction_type(char *instruction) {
-    if (is_comment(instruction)) {
+    if (is_empty_row(instruction)) {
+        return EMPTY_ROW;
+    } else if (is_comment(instruction)) {
         return COMMENT;
     } else if (is_label(instruction)) {
         return LABEL;

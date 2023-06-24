@@ -20,10 +20,13 @@ static void add_ic_to_all__data_addresses(SymbolTable *table, int ic){
 
 }
 
-Bool handle_row(SymbolTable table, OperandRow *row, Word *data_image, Word *code_image, int *ic, int *dc) {
+Bool handle_row(SymbolTable *table, OperandRow *row, Word *data_image, Word *code_image, int *ic, int *dc) {
     int i;
     Symbol *symbol;
     InstructionType instruction_type, label_instruction_type;
+    if(row->operand == NULL){
+        return TRUE;
+    }
     if((instruction_type = get_instruction_type(row->operand))==LABEL){
         row->operand[strlen(row->operand)-1] = '\0';
         /*TODO:  validate label doesnt exist */
@@ -31,15 +34,15 @@ Bool handle_row(SymbolTable table, OperandRow *row, Word *data_image, Word *code
         switch (label_instruction_type) {
             case (DATA):
                 symbol = create_symbol(row->operand, *dc, DATA);
-                add_symbol(&table, symbol);
+                add_symbol(table, symbol);
                 break;
             case (STRING):
                 symbol = create_symbol(row->operand, *dc, STRING);
-                add_symbol(&table, symbol);
+                add_symbol(table, symbol);
                 break;
             case (COMMAND):
                 symbol = create_symbol(row->operand, *ic, COMMAND);
-                add_symbol(&table, symbol);
+                add_symbol(table, symbol);
                 break;
             case (COMMENT):
                 return TRUE;
@@ -56,6 +59,8 @@ Bool handle_row(SymbolTable table, OperandRow *row, Word *data_image, Word *code
     };
     if(instruction_type == COMMENT) {
         return TRUE;
+    }else if(instruction_type == EMPTY_ROW) {
+            return TRUE;
     }else if(instruction_type == DATA){
         address_data_instruction(row,data_image,dc);
     }else if(instruction_type == STRING) {
@@ -63,9 +68,11 @@ Bool handle_row(SymbolTable table, OperandRow *row, Word *data_image, Word *code
     }else if(instruction_type == LABEL) {
         /* TODO: throw error for double label */
     }else if(instruction_type == EXTERN) {
-        /* TODO: add to extern table */
+        symbol = create_symbol(row->parameters[0], 0, EXTERN);
+        add_symbol(table, symbol);
     }else if(instruction_type == ENTRY) {
-        /* TODO: add to entry table */
+        symbol = create_symbol(row->parameters[0], *ic, ENTRY);
+        add_symbol(table, symbol);
     }else if(instruction_type == COMMAND){
         address_code_instruction(row,code_image,ic);
     }else{
@@ -92,9 +99,9 @@ Bool first_step_process(SymbolTable table, FileOperands *file_operands, char *fi
     file_operands = parse_file_to_operand_rows(file);
     for (i = 0; i < file_operands->size; i++) {
         current_row = &file_operands->rows[i];
-        is_successful = handle_row(table, current_row,data_image,code_image, &ic, &dc) && is_successful;
-        add_ic_to_all__data_addresses(&table,ic);
+        is_successful = handle_row(&table, current_row,data_image,code_image, &ic, &dc) && is_successful;
     }
+    add_ic_to_all__data_addresses(&table,ic);
 
     fclose(file);
     return is_successful;

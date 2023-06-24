@@ -20,6 +20,7 @@ typedef enum InstructionType {
     COMMAND,
     COMMENT,
     LABEL,
+    EMPTY_ROW,
     UNKNOWN
 } InstructionType;
 
@@ -27,7 +28,7 @@ typedef enum AddressingType {
     IMMEDIATE = 1,
     DIRECT = 3,
     REGISTER = 5,
-    NO_ADD_VALUE = 0
+    NO_VALUE = 0
 } AddressingType;
 
 typedef enum AddressingMethod {
@@ -35,6 +36,17 @@ typedef enum AddressingMethod {
     EXTERNAL = 1,
     RELOCATABLE = 2
 } AddressingMethod ;
+
+typedef struct ParameterMode {
+    Bool is_immediate;
+    Bool is_direct;
+    Bool is_register;
+} ParameterMode;
+
+typedef struct OpcodeModes {
+    ParameterMode src_op;
+    ParameterMode dest_op;
+} OpcodeMode;
 
 typedef enum Register {
     R0 = 0,

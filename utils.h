@@ -44,4 +44,6 @@ Bool is_integer(char *str);
 
 Bool is_comment(char *operand);
 
+Bool is_empty_row(char *row);
+
 

@@ -62,3 +62,13 @@ Bool is_integer(char *str) {
 Bool is_comment(char *instruction) {
     return instruction[0] == COMMENT_PREFIX;
 }
+
+Bool is_empty_row(char *row) {
+    int i;
+    for (i = 0; i < strlen(row); i++) {
+        if (row[i] != ' ' && row[i] != '\t' && row[i] != '\n' && row[i] != '\r') {
+            return FALSE;
+        }
+    }
+    return TRUE;
+}
