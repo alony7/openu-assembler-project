@@ -5,6 +5,7 @@
 
 typedef struct OperandRow {
     char original_line[MAX_LINE_LENGTH];
+    int row_number;
     char *operand;
     char **parameters;
     int parameters_count;

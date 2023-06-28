@@ -72,6 +72,7 @@ FileOperands *parse_file_to_operand_rows(FILE *file){
 
         parse_operand_row(tmp_line, current_row);
         /*resize rows if needed*/
+        current_row->row_number = rows_count;
         rows_count++;
     }
     file_operands->rows = rows;

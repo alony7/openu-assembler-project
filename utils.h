@@ -1,17 +1,10 @@
 #pragma once
 #include "io_parsers.h"
-#include "instruction_handling.h"
 
 typedef enum Bool {
     FALSE = 0,
     TRUE = 1
 } Bool;
-
-typedef struct ErrInfo {
-    int line_number;
-    char *error_message;
-    char *file_name;
-} ErrInfo;
 
 typedef enum Opcode {
     MOV = 0,

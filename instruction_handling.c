@@ -4,9 +4,9 @@
 #include "utils.h"
 
 
-Bool handle_main_operand(const OperandRow *row, const Word *code_image, int *ic, Opcode *op_num, OpcodeMode *op_mode,
-                         char **raw_src_operand, char **raw_dest_operand, AddressingType *src_op,
-                         AddressingType *dest_op);
+Bool handle_command_operand(const OperandRow *row,  Word *code_image, int *ic, Opcode *op_num, OpcodeMode *op_mode,
+                            char **raw_src_operand, char **raw_dest_operand, AddressingType *src_op,
+                            AddressingType *dest_op);
 
 
 Bool
@@ -133,8 +133,8 @@ Bool address_code_instruction(OperandRow *row, Word *code_image, int *ic) {
         return FALSE;
     }
     OpcodeMode op_mode = get_opcode_possible_modes(op_num);
-    if (!handle_main_operand(row, code_image, ic, &op_num, &op_mode, &raw_src_operand, &raw_dest_operand, &src_op,
-                             &dest_op)) {
+    if (!handle_command_operand(row, code_image, ic, &op_num, &op_mode, &raw_src_operand, &raw_dest_operand, &src_op,
+                                &dest_op)) {
         return FALSE;
     };
     if (row->parameters_count == 0) {
@@ -176,9 +176,9 @@ handle_parameter_operands(OperandRow *row, Word *code_image, int *ic, char *raw_
     return is_success;
 }
 
-Bool handle_main_operand(const OperandRow *row, const Word *code_image, int *ic, Opcode *op_num, OpcodeMode *op_mode,
-                         char **raw_src_operand, char **raw_dest_operand, AddressingType *src_op,
-                         AddressingType *dest_op) {
+Bool handle_command_operand(const OperandRow *row,  Word *code_image, int *ic, Opcode *op_num, OpcodeMode *op_mode,
+                            char **raw_src_operand, char **raw_dest_operand, AddressingType *src_op,
+                            AddressingType *dest_op) {
     if (row->parameters_count == 2) {
         (*raw_src_operand) = row->parameters[0];
         (*raw_dest_operand) = row->parameters[1];
