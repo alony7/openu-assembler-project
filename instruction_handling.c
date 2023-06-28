@@ -148,16 +148,6 @@ Bool address_code_instruction(OperandRow *row, Word *code_image, int *ic) {
     return TRUE;
 }
 
-void build_opcode_mode(int src_is_immediate, int src_is_direct,int src_is_register,int dest_is_immediate,
-                       int dest_is_direct,int dest_is_register, OpcodeMode *opcode_mode) {
-    opcode_mode->src_op.is_register = src_is_register;
-    opcode_mode->src_op.is_direct = src_is_direct;
-    opcode_mode->src_op.is_immediate = src_is_immediate;
-    opcode_mode->dest_op.is_register = dest_is_register;
-    opcode_mode->dest_op.is_direct = dest_is_direct;
-    opcode_mode->dest_op.is_immediate = dest_is_immediate;
-}
-
 
 
 Bool handle_parameter_operands(OperandRow *row, Word *code_image, int *ic, char *raw_src_operand, char *raw_dest_operand,

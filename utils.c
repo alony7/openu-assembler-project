@@ -148,6 +148,16 @@ void code_number_into_word_bits(Word *word, int number, int offset, int length){
     }
 }
 
+void build_opcode_mode(int src_is_immediate, int src_is_direct,int src_is_register,int dest_is_immediate,
+                       int dest_is_direct,int dest_is_register, OpcodeMode *opcode_mode) {
+    opcode_mode->src_op.is_register = src_is_register;
+    opcode_mode->src_op.is_direct = src_is_direct;
+    opcode_mode->src_op.is_immediate = src_is_immediate;
+    opcode_mode->dest_op.is_register = dest_is_register;
+    opcode_mode->dest_op.is_direct = dest_is_direct;
+    opcode_mode->dest_op.is_immediate = dest_is_immediate;
+}
+
 OpcodeMode get_opcode_possible_modes(Opcode opcode){
     OpcodeMode opcode_mode = {0};
     ParameterMode src_mode = {0};
