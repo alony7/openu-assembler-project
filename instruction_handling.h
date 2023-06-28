@@ -1,5 +1,26 @@
 #pragma once
-#include "utils.h"
+#include "util_types.h"
+#include "io_parsers.h"
+
+typedef enum Opcode {
+    MOV = 0,
+    CMP = 1,
+    ADD = 2,
+    SUB = 3,
+    NOT = 4,
+    CLR = 5,
+    LEA = 6,
+    INC = 7,
+    DEC = 8,
+    JMP = 9,
+    BNE = 10,
+    RED = 11,
+    PRN = 12,
+    JSR = 13,
+    RTS = 14,
+    STOP = 15,
+    INVALID_OPCODE = -1
+} Opcode;
 
 //TODO: change to bool
 typedef struct
@@ -31,6 +52,19 @@ typedef enum AddressingType {
     NO_VALUE = 0
 } AddressingType;
 
+typedef struct {
+    char *name;
+    char **value;
+    int row_number;
+    int value_size;
+} MacroItem;
+
+typedef struct {
+    MacroItem *items;
+    int capacity;
+    int size;
+} MacroTable;
+
 typedef enum AddressingMethod {
     ABSOLUTE = 0,
     EXTERNAL = 1,
@@ -60,11 +94,11 @@ typedef enum Register {
     INVALID_REGISTER = -1
 } Register;
 
+
+
+
+
 InstructionType get_instruction_type(char *instruction);
-
-
-
-
 
 Bool address_code_instruction(OperandRow *row, Word *code_image, int *ic);
 
@@ -72,3 +106,6 @@ Bool address_string_instruction(OperandRow *row, Word *data_image, int *dc);
 
 Bool address_data_instruction(OperandRow *row, Word *data_image, int *dc);
 
+void code_number_into_word_bits(Word *word, int number, int offset, int length);
+
+OpcodeMode get_opcode_possible_modes(Opcode opcode);

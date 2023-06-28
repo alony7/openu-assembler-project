@@ -2,6 +2,7 @@
 
 #include <stdio.h>
 #include "consts.h"
+#include "util_types.h"
 
 typedef struct OperandRow {
     char original_line[MAX_LINE_LENGTH];

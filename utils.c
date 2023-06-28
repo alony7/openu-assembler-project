@@ -137,17 +137,6 @@ int parse_int(char *str) {
     return num;
 }
 
-void code_number_into_word_bits(Word *word, int number, int offset, int length){
-    int i = 0;
-    number = number & ((1 << length) - 1);
-    if(number < 0){
-        number = (1 << length) + number;
-    }
-    for(i = 0; i < length; i++){
-        word->bits[offset + i] = (number >> i) & 1;
-    }
-}
-
 void build_opcode_mode(int src_is_immediate, int src_is_direct,int src_is_register,int dest_is_immediate,
                        int dest_is_direct,int dest_is_register, OpcodeMode *opcode_mode) {
     opcode_mode->src_op.is_register = src_is_register;
@@ -158,43 +147,3 @@ void build_opcode_mode(int src_is_immediate, int src_is_direct,int src_is_regist
     opcode_mode->dest_op.is_immediate = dest_is_immediate;
 }
 
-OpcodeMode get_opcode_possible_modes(Opcode opcode){
-    OpcodeMode opcode_mode = {0};
-    ParameterMode src_mode = {0};
-    ParameterMode dest_mode = {0};
-    opcode_mode.src_op = src_mode;
-    opcode_mode.dest_op = dest_mode;
-    switch (opcode){
-        case MOV:
-        case ADD:
-        case SUB:
-            build_opcode_mode(TRUE,TRUE,TRUE,FALSE,TRUE,TRUE,&opcode_mode);
-            break;
-        case CMP:
-            build_opcode_mode(TRUE,TRUE,TRUE,TRUE,TRUE,TRUE,&opcode_mode);
-            break;
-        case NOT:
-        case CLR:
-        case INC:
-        case DEC:
-        case JMP:
-        case BNE:
-        case RED:
-        case JSR:
-            build_opcode_mode(FALSE,FALSE,FALSE,FALSE,TRUE,TRUE,&opcode_mode);
-            break;
-        case LEA:
-            build_opcode_mode(FALSE,TRUE,FALSE,FALSE,TRUE,TRUE,&opcode_mode);
-            break;
-        case PRN:
-            build_opcode_mode(TRUE,TRUE,TRUE,FALSE,FALSE,FALSE,&opcode_mode);
-            break;
-        case RTS:
-        case STOP:
-            build_opcode_mode(FALSE,FALSE,FALSE,FALSE,FALSE,FALSE,&opcode_mode);
-            break;
-        default:
-            build_opcode_mode(FALSE,FALSE,FALSE,FALSE,FALSE,FALSE,&opcode_mode);
-    }
-    return opcode_mode;
-}

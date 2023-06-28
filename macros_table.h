@@ -1,18 +1,7 @@
 #include "consts.h"
 #include "utils.h"
 #pragma once
-typedef struct {
-    char *name;
-    char **value;
-    int row_number;
-    int value_size;
-} MacroItem;
 
-typedef struct {
-    MacroItem *items;
-    int capacity;
-    int size;
-} MacroTable;
 
 MacroTable create_macro_table();
 
