@@ -23,7 +23,7 @@ static Bool fill_macro_table(FileOperands *file_operands, MacroTable *table) {
     for (row_number = 0; row_number < file_operands->size; row_number++) {
         parsed_row = file_operands->rows[row_number];
         raw_line = parsed_row.original_line;
-        if (raw_line[0] == ';' && !is_macro) {
+        if (is_comment(raw_line) && !is_macro) {
             continue;
         }
         if (is_string_equal(parsed_row.operand, END_MACRO_DIRECTIVE)) {
@@ -77,7 +77,7 @@ static Bool rewrite_macros(FileOperands *file_operands, MacroTable *table, FILE 
         parsed_row = file_operands->rows[row_number];
         raw_line = line_output = parsed_row.original_line;
         /* comment line */
-        if (raw_line[0] == ';') {
+        if (is_comment(raw_line)) {
             continue;
         } else if (is_string_equal(parsed_row.operand, START_MACRO_DIRECTIVE)) {
             is_macro = TRUE;
@@ -118,7 +118,7 @@ static Bool expand_file_macros(char *input_filename, char *output_filename) {
         return FALSE;
     }
     MacroTable macro_table = create_macro_table();
-    FileOperands *parsed_input_file = parse_file_to_operand_rows(input_file);
+    FileOperands *parsed_input_file = parse_file_to_operand_rows(input_file,input_filename);
     if ((result = fill_macro_table(parsed_input_file, &macro_table))) {
         fseek(input_file, 0, SEEK_SET);
         result = rewrite_macros(parsed_input_file, &macro_table, output_file);
