@@ -67,9 +67,9 @@ typedef struct {
 } MacroTable;
 
 typedef enum AddressingMethod {
-    ABSOLUTE = 0,
-    EXTERNAL = 1,
-    RELOCATABLE = 2
+    ABSOLUTE_ADDRESSING = 0,
+    EXTERNAL_ADDRESSING = 1,
+    RELOCATABLE_ADDRESSING = 2
 } AddressingMethod ;
 
 typedef struct ParameterMode {

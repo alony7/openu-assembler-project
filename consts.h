@@ -40,3 +40,4 @@
 #define COMMENT_PREFIX ';'
 #define REGISTER_PREFIX '@'
 #define REGISTER_LETTER 'r'
+#define NULL_CHAR '\0'

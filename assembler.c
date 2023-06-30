@@ -10,7 +10,8 @@ static void execute_program(int argc, char *argv[]) {
     int i;
     argv += 1;
     FileOperands *file_operands = NULL;
-    SymbolTable symbol_table = create_symbol_table();
+    SymbolTable label_symbol_table = create_symbol_table();
+    SymbolTable relocations_symbol_table = create_symbol_table();
 
 
     /*TODO: extract to function*/
@@ -24,7 +25,7 @@ static void execute_program(int argc, char *argv[]) {
 
 
     /* run first step assemble */
-    first_step_process(symbol_table, file_operands,
+    first_step_process(label_symbol_table, relocations_symbol_table,file_operands,
                        "C:\\Users\\alons\\vm\\exercises\\mm14\\openu-assembler-project\\test-files\\work1.am");
 
     /* run second step assemble */

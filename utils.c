@@ -1,5 +1,6 @@
 #include <malloc.h>
 #include <string.h>
+#include <stdarg.h>
 #include "utils.h"
 #include "instruction_handling.h"
 #include "error.h"
@@ -144,10 +145,36 @@ int parse_int(char *str) {
     return num;
 }
 
-char *join_strings(char *str1, char *str2) {
-    /* TODO: release */
-    char *joined = malloc(strlen(str1) + strlen(str2) + 1);
-    strcpy(joined, str1);
-    strcat(joined, str2);
-    return joined;
+/* TODO: free memory */
+char *join_strings(int num_strings, ...) {
+    va_list args;
+    int total_length = 0;
+    char *result, *current;
+    int i;
+
+    // Calculate the total length of all strings
+    va_start(args, num_strings);
+    for (i = 0; i < num_strings; i++) {
+        current = va_arg(args, char *);
+        total_length += strlen(current);
+    }
+    va_end(args);
+
+    // Allocate memory for the result string
+    result = (char *)malloc((total_length + 1) * sizeof(char));
+    if (result == NULL) {
+        fprintf(stderr, "Memory allocation failed\n");
+        return NULL;
+    }
+
+    // Concatenate all the strings
+    va_start(args, num_strings);
+    result[0] = '\0';  // Initialize the result string as an empty string
+    for (i = 0; i < num_strings; i++) {
+        current = va_arg(args, char *);
+        strcat(result, current);
+    }
+    va_end(args);
+
+    return result;
 }
