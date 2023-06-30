@@ -94,6 +94,7 @@ Bool address_string_instruction(OperandRow *row, Word *data_image, int *dc) {
 
 Bool code_word_from_operand(OperandRow *row, Word *code_image, int *ic, char *raw_operand,
                             AddressingType const addressing_type, OperandLocation const location) {
+    Register reg;
     if (addressing_type == IMMEDIATE) {
         parse_int_to_word(code_image + *ic, parse_int(raw_operand), TRUE);
         (*ic)++;
@@ -101,7 +102,7 @@ Bool code_word_from_operand(OperandRow *row, Word *code_image, int *ic, char *ra
         empty_word(&code_image[*ic]);
         (*ic)++;
     } else {
-        Register reg = get_register(raw_operand);
+        reg = get_register(raw_operand);
         if (reg == INVALID_REGISTER) {
             export_error(row->line_number, join_strings(2,"invalid register: ",raw_operand), row->file_name);
             return FALSE;
@@ -128,13 +129,14 @@ Bool address_code_instruction(OperandRow *row, Word *code_image, int *ic) {
     /* TODO:  valdiate original row is correctly formatted */
     char *raw_src_operand = NULL, *raw_dest_operand = NULL;
     AddressingType src_op = {0}, dest_op = {0};
+    OpcodeMode op_mode = {0};
 
     Opcode op_num = get_opcode(row->operand);
     if (op_num == INVALID_OPCODE) {
         export_error(row->line_number, join_strings(2, "invalid instruction: ",row->operand), row->file_name);
         return FALSE;
     }
-    OpcodeMode op_mode = get_opcode_possible_modes(op_num);
+    op_mode = get_opcode_possible_modes(op_num);
     if(row->parameters_count != opcode_has_source(op_mode) + opcode_has_destination(op_mode)){
         export_error(row->line_number, join_strings(2, "invalid number of operands for instruction: ",row->operand), row->file_name);
         return FALSE;

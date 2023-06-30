@@ -151,7 +151,6 @@ char *join_strings(int num_strings, ...) {
     char *result, *current;
     int i;
 
-    // Calculate the total length of all strings
     va_start(args, num_strings);
     for (i = 0; i < num_strings; i++) {
         current = va_arg(args, char *);
@@ -159,16 +158,14 @@ char *join_strings(int num_strings, ...) {
     }
     va_end(args);
 
-    // Allocate memory for the result string
     result = (char *)malloc((total_length + 1) * sizeof(char));
     if (result == NULL) {
         fprintf(stderr, "Memory allocation failed\n");
         return NULL;
     }
 
-    // Concatenate all the strings
     va_start(args, num_strings);
-    result[0] = '\0';  // Initialize the result string as an empty string
+    result[0] = '\0';
     for (i = 0; i < num_strings; i++) {
         current = va_arg(args, char *);
         strcat(result, current);

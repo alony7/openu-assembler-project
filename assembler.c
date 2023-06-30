@@ -2,17 +2,13 @@
 #include <string.h>
 #include <stdlib.h>
 #include "macros_table.h"
-#include "pre_process.h"
 #include "first_step.h"
 #include "symbol_table.h"
 
 static void execute_program(int argc, char *argv[]) {
-    int i;
-    argv += 1;
     FileOperands *file_operands = NULL;
     SymbolTable label_symbol_table = create_symbol_table();
     SymbolTable relocations_symbol_table = create_symbol_table();
-
 
     /*TODO: extract to function*/
     if(argc == 1){
@@ -20,8 +16,8 @@ static void execute_program(int argc, char *argv[]) {
         exit(1);
     }
 
-//    /* run macro expand */
-//    expand_macros(argv, argc - 1);
+    /* run macro expand */
+ /*    expand_macros(argv, argc - 1);*/
 
 
     /* run first step assemble */

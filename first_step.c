@@ -1,14 +1,10 @@
-//
-// Created by alons on 23/06/2023.
-//
-
 #include <string.h>
 #include "first_step.h"
 #include "instruction_handling.h"
 #include "error.h"
 
 
-static void add_ic_to_all__data_addresses(SymbolTable *table, int ic) {
+static void add_ic_to_all_data_addresses(SymbolTable *table, int ic) {
     Symbol *symbol;
     int i;
     for (i = 0; i < table->size; i++) {
@@ -147,7 +143,7 @@ Bool first_step_process(SymbolTable labels_table, SymbolTable relocations_table,
         is_success = handle_row(&labels_table, &relocations_table, current_row, data_image, code_image, &ic, &dc) &&
                      is_success;
     }
-    add_ic_to_all__data_addresses(&labels_table, ic);
+    add_ic_to_all_data_addresses(&labels_table, ic);
 
     fclose(file);
     return is_success;

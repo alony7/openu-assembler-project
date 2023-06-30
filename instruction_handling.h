@@ -23,7 +23,7 @@ typedef enum Opcode {
     INVALID_OPCODE = -1
 } Opcode;
 
-//TODO: change to bool
+/* TODO: change to bool */
 typedef struct
 {
     int bits[WORD_SIZE];
