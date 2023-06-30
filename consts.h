@@ -39,3 +39,4 @@
 #define LABEL_TERMINATOR ':'
 #define COMMENT_PREFIX ';'
 #define REGISTER_PREFIX '@'
+#define REGISTER_LETTER 'r'

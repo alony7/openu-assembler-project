@@ -98,6 +98,13 @@ Opcode get_opcode(char *command) {
 
 /* TODO: CHeck error */
 Register get_register(char *operand){
+    if(!is_register(operand) || operand[1] != REGISTER_LETTER){
+        return INVALID_REGISTER;
+    }
+    if(strlen(operand) != 3){
+        return INVALID_REGISTER;
+    }
+
     switch (operand[2]){
         case '0':
             return R0;
@@ -137,13 +144,10 @@ int parse_int(char *str) {
     return num;
 }
 
-void build_opcode_mode(int src_is_immediate, int src_is_direct,int src_is_register,int dest_is_immediate,
-                       int dest_is_direct,int dest_is_register, OpcodeMode *opcode_mode) {
-    opcode_mode->src_op.is_register = src_is_register;
-    opcode_mode->src_op.is_direct = src_is_direct;
-    opcode_mode->src_op.is_immediate = src_is_immediate;
-    opcode_mode->dest_op.is_register = dest_is_register;
-    opcode_mode->dest_op.is_direct = dest_is_direct;
-    opcode_mode->dest_op.is_immediate = dest_is_immediate;
+char *join_strings(char *str1, char *str2) {
+    /* TODO: release */
+    char *joined = malloc(strlen(str1) + strlen(str2) + 1);
+    strcpy(joined, str1);
+    strcat(joined, str2);
+    return joined;
 }
-

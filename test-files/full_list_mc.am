@@ -1,5 +1,4 @@
 
-;ext, ent, macro
 K:		.data 22
 MAIN:	mov @r7, W
 add      @r2,STR

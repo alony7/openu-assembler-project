@@ -118,7 +118,7 @@ static Bool expand_file_macros(char *input_filename, char *output_filename) {
         return FALSE;
     }
     MacroTable macro_table = create_macro_table();
-    FileOperands *parsed_input_file = parse_file_to_operand_rows(input_file);
+    FileOperands *parsed_input_file = parse_file_to_operand_rows(input_file,input_filename);
     if ((result = fill_macro_table(parsed_input_file, &macro_table))) {
         fseek(input_file, 0, SEEK_SET);
         result = rewrite_macros(parsed_input_file, &macro_table, output_file);

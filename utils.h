@@ -24,3 +24,5 @@ Bool is_label(char *operand);
 
 int parse_int(char *str);
 
+char *join_strings(char *str1, char *str2);
+

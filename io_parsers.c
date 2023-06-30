@@ -53,8 +53,9 @@ static FileOperands *create_file_operands(){
     return file_operands;
 }
 
-/*TODO: explain the exercise allowed max rows, and maybe add limit*/
-FileOperands *parse_file_to_operand_rows(FILE *file){
+/*TODO: explain the exercise allowed max rows, and maybe add limit
+ * TODO: make this take just the filename*/
+FileOperands *parse_file_to_operand_rows(FILE *file,char *file_name){
     FileOperands *file_operands = create_file_operands();
     OperandRow *rows = malloc(BASE_ROW_BATCH_SIZE * sizeof(OperandRow));
     OperandRow *current_row;
@@ -72,7 +73,8 @@ FileOperands *parse_file_to_operand_rows(FILE *file){
 
         parse_operand_row(tmp_line, current_row);
         /*resize rows if needed*/
-        current_row->row_number = rows_count;
+        current_row->line_number = rows_count;
+        strcpy(current_row->file_name, file_name);
         rows_count++;
     }
     file_operands->rows = rows;

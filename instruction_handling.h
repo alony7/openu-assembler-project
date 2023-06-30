@@ -1,6 +1,7 @@
 #pragma once
 #include "util_types.h"
 #include "io_parsers.h"
+#include "error.h"
 
 typedef enum Opcode {
     MOV = 0,
@@ -109,3 +110,5 @@ Bool address_data_instruction(OperandRow *row, Word *data_image, int *dc);
 void code_number_into_word_bits(Word *word, int number, int offset, int length);
 
 OpcodeMode get_opcode_possible_modes(Opcode opcode);
+
+void advance_operand_row(OperandRow *row);
