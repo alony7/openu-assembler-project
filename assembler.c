@@ -34,7 +34,6 @@ static void execute_program(int argc, char *argv[]) {
 /*TODO: add detailed comment*/
 /* TODO: wrap malloc */
 /* TODO: wrap free */
-/* TODO: errors to stderr */
 /* TODO: add pointer casting to all mallocs */
 /* TODO: move function declaratios to head of headers */
 /* TODO: remove export for internally used functions */

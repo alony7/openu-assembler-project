@@ -97,7 +97,6 @@ Opcode get_opcode(char *command) {
    return INVALID_OPCODE;
 }
 
-/* TODO: CHeck error */
 Register get_register(char *operand){
     if(!is_register(operand) || operand[1] != REGISTER_LETTER){
         return INVALID_REGISTER;
