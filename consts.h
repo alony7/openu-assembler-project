@@ -4,7 +4,7 @@
 #define AM_FILE_EXTENSION ".am"
 
 /* TODO: update to 100 */
-#define MEMORY_OFFSET 0
+#define MEMORY_OFFSET 100
 #define MEMORY_SIZE 1024
 #define WORD_SIZE 12
 #define START_MACRO_DIRECTIVE "mcro"
@@ -41,3 +41,4 @@
 #define REGISTER_PREFIX '@'
 #define REGISTER_LETTER 'r'
 #define NULL_CHAR '\0'
+#define STRING_BOUNDARY '"'

@@ -137,7 +137,7 @@ Bool is_register(char *operand) {
 Bool is_label(char *instruction) {
     return instruction[strlen(instruction) - 1] == LABEL_TERMINATOR;
 }
-
+/* TODO: report error */
 int parse_int(char *str) {
     int num;
     sscanf(str, "%d", &num);
@@ -173,4 +173,12 @@ char *join_strings(int num_strings, ...) {
     va_end(args);
 
     return result;
+}
+
+void trim_string_quotes(char *str) {
+    int i;
+    for (i = 0; i < strlen(str); i++) {
+        str[i] = str[i + 1];
+    }
+    str[strlen(str) - 1] = '\0';
 }

@@ -5,15 +5,16 @@ mov ARR1,@r6
 mov @r3,A
 mov @r3,@r6
 
+
 A: cmp 45,123
-cmp 45,A
-cmp 45,@r6
+cmpf 45,A
+cmdp 45,@r36
 cmp ARR1,123
 cmp ARR1,A
 cmp ARR1,@r6
 cmp @r3,123
 cmp @r3,A
-cmp @r3,@r6
+cgmp @r3,@r6
 
 B: add 45,A
 add 45,@r6

@@ -4,9 +4,13 @@
 #include "macros_table.h"
 #include "first_step.h"
 #include "symbol_table.h"
+#include "second_step.h"
 
 static void execute_program(int argc, char *argv[]) {
+    Word data_image[MEMORY_SIZE];
+    Word code_image[MEMORY_SIZE];
     FileOperands *file_operands = NULL;
+    int i,j;
     SymbolTable label_symbol_table = create_symbol_table();
     SymbolTable relocations_symbol_table = create_symbol_table();
 
@@ -21,9 +25,30 @@ static void execute_program(int argc, char *argv[]) {
 
 
     /* run first step assemble */
-    first_step_process(label_symbol_table, relocations_symbol_table,file_operands,
-                       "C:\\Users\\alons\\vm\\exercises\\mm14\\openu-assembler-project\\test-files\\work1.am");
+    if(first_step_process(data_image,code_image,&label_symbol_table, &relocations_symbol_table,&file_operands,
+                       "C:\\Users\\alons\\vm\\exercises\\mm14\\openu-assembler-project\\test-files\\work1.am")){
+        printf("first step success\n");
+        second_step_process(data_image,code_image,&label_symbol_table, &relocations_symbol_table,file_operands,
+                            "C:\\Users\\alons\\vm\\exercises\\mm14\\openu-assembler-project\\test-files\\work1.am");
+        //pretty print the whole code image, with a line for every word
+//        for(i = 100; i < 118; i++){
+//            char word[200] = "";
+//            for(j=0;j<=11;j++){
+//                word[11-j] = (code_image[i].bits[j]) + '0';
+//            }
+//            printf("%s\n", word);
+//        }
+//        for(i = 0; i < 11; i++){
+//            char word[200] = "";
+//            for(j=0;j<=11;j++){
+//                word[11-j] = (data_image[i].bits[j]) + '0';
+//            }
+//            printf("%s\n", word);
+//        }
 
+
+
+    }
     /* run second step assemble */
 }
 

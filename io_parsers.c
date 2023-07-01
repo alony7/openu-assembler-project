@@ -12,7 +12,7 @@ FILE *create_file_stream(char *file_name, char *mode) {
     }
     return file;
 }
-
+/*TODO: add string terminations */
 void parse_operand_row(char *line, OperandRow *parsed_row) {
     char *operand;
     char *parameter;

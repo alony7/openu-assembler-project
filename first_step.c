@@ -79,10 +79,10 @@ Bool handle_row(SymbolTable *labels_table, SymbolTable *relocations_table, Opera
         case (EMPTY_ROW):
             return TRUE;
         case (DATA):
-            is_success = address_data_instruction(row, data_image, dc);
+            CHECK_AND_UPDATE_SUCCESS(is_success,address_data_instruction(row, data_image, dc));
             break;
         case (STRING):
-            is_success = address_string_instruction(row, data_image, dc);
+            CHECK_AND_UPDATE_SUCCESS(is_success,address_string_instruction(row, data_image, dc));
             break;
         case (LABEL):
             export_error(row->line_number, "nested labels are not allowed", row->file_name);
@@ -113,22 +113,21 @@ Bool handle_row(SymbolTable *labels_table, SymbolTable *relocations_table, Opera
             add_symbol(relocations_table, symbol);
             break;
         case (COMMAND):
-            is_success = address_code_instruction(row, code_image, ic);
+            CHECK_AND_UPDATE_SUCCESS(is_success,address_code_instruction(row, code_image, ic));
             break;
         default:
             export_error(row->line_number, join_strings(2, "invalid instruction: ", row->operand), row->file_name);
             return FALSE;
     }
+    /*TODO: validate every entry is in the table*/
     return is_success;
 }
 
 
-Bool first_step_process(SymbolTable labels_table, SymbolTable relocations_table, FileOperands *file_operands,
+Bool first_step_process(Word data_image[MEMORY_SIZE], Word code_image[MEMORY_SIZE],SymbolTable *labels_table, SymbolTable *relocations_table, FileOperands **file_operands,
                         char *file_name) {
     int ic = MEMORY_OFFSET;
     int dc = 0;
-    Word data_image[MEMORY_SIZE];
-    Word code_image[MEMORY_SIZE];
     Bool is_success = TRUE;
     int i;
     OperandRow *current_row;
@@ -136,14 +135,13 @@ Bool first_step_process(SymbolTable labels_table, SymbolTable relocations_table,
     if (file == NULL) {
         return FALSE;
     }
-    file_operands = parse_file_to_operand_rows(file, file_name);
-    for (i = 0; i < file_operands->size; i++) {
-        current_row = &file_operands->rows[i];
+    (*file_operands) = parse_file_to_operand_rows(file, file_name);
+    for (i = 0; i < (*file_operands)->size; i++) {
+        current_row = &((*file_operands)->rows[i]);
         current_row->line_number = i + 1;
-        is_success = handle_row(&labels_table, &relocations_table, current_row, data_image, code_image, &ic, &dc) &&
-                     is_success;
+        CHECK_AND_UPDATE_SUCCESS(is_success,handle_row(labels_table, relocations_table, current_row, data_image, code_image, &ic, &dc));
     }
-    add_ic_to_all_data_addresses(&labels_table, ic);
+    add_ic_to_all_data_addresses(labels_table, ic);
 
     fclose(file);
     return is_success;

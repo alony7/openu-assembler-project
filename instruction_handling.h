@@ -112,3 +112,6 @@ void code_number_into_word_bits(Word *word, int number, int offset, int length);
 OpcodeMode get_opcode_possible_modes(Opcode opcode);
 
 void advance_operand_row(OperandRow *row);
+
+void get_word_addressing_types(Word *word, AddressingType *src, AddressingType *dest);
+void parse_symbol_to_word(int symbol_index, Word *word,AddressingMethod addressing_method);

@@ -23,8 +23,8 @@ AddressingType get_addressing_type(char *operand);
 
 void parse_int_to_word(Word *word, int num, Bool add_ARE);
 
-Bool code_word_from_operand(OperandRow *row,Word *code_image, int *ic, char *raw_operand,
-                            AddressingType  addressing_type, OperandLocation  location);
+Bool code_word_from_operand(OperandRow *row, Word *code_image, int *ic, char *raw_operand,
+                            AddressingType addressing_type, OperandLocation location);
 
 void empty_word(Word *word);
 
@@ -33,6 +33,11 @@ void empty_word(Word *word) {
     for (i = 0; i < WORD_SIZE; i++) {
         word->bits[i] = FALSE;
     }
+}
+
+void parse_symbol_to_word(int symbol_index, Word *word,AddressingMethod addressing_method) {
+    code_number_into_word_bits(word, addressing_method, 0, 2);
+    code_number_into_word_bits(word, symbol_index, 2, 10);
 }
 
 void parse_registers_to_word(Word *word, Register src_register, Register dest_register) {
@@ -80,15 +85,34 @@ Bool address_data_instruction(OperandRow *row, Word *data_image, int *dc) {
     return TRUE;
 }
 
+Bool is_legal_string_row(OperandRow *row) {
+    int i;
+    char *string = row->parameters[0];
+    if(string[0] != STRING_BOUNDARY || string[strlen(string) - 1] != STRING_BOUNDARY){
+        export_error(row->line_number, "string must be enclosed in double quotes", row->file_name);
+        return FALSE;
+    }
+    for (i = 0; i < strlen(string); i++) {
+        if ((string[i] & ~0x7f) != 0) {
+            export_error(row->line_number, "string contains non-ascii characters", row->file_name);
+            return FALSE;
+        }
+    }
+    return TRUE;
+}
 
 Bool address_string_instruction(OperandRow *row, Word *data_image, int *dc) {
     int i;
+    char *string_token = row->parameters[0];
     /* TODO: valdiate original row is correctly formatted */
-    for (i = 0; i < strlen(row->parameters[0]); i++) {
-        /* TODO: I doubt this works, need to check int parse */
-        parse_int_to_word(&(data_image[*dc]), (int) (row->parameters[0][i]), FALSE);
+    if(!is_legal_string_row(row)) return FALSE;
+    trim_string_quotes(string_token);
+    for (i = 0; i < strlen(string_token); i++) {
+        parse_int_to_word(&(data_image[*dc]), (int) (string_token[i]), FALSE);
         (*dc)++;
     }
+    parse_int_to_word(&(data_image[*dc]), (int) (NULL_CHAR), FALSE);
+    (*dc)++;
     return TRUE;
 }
 
@@ -104,7 +128,7 @@ Bool code_word_from_operand(OperandRow *row, Word *code_image, int *ic, char *ra
     } else {
         reg = get_register(raw_operand);
         if (reg == INVALID_REGISTER) {
-            export_error(row->line_number, join_strings(2,"invalid register: ",raw_operand), row->file_name);
+            export_error(row->line_number, join_strings(2, "invalid register: ", raw_operand), row->file_name);
             return FALSE;
         }
         if (location == DESTINATION) {
@@ -133,55 +157,48 @@ Bool address_code_instruction(OperandRow *row, Word *code_image, int *ic) {
 
     Opcode op_num = get_opcode(row->operand);
     if (op_num == INVALID_OPCODE) {
-        export_error(row->line_number, join_strings(2, "invalid instruction: ",row->operand), row->file_name);
+        export_error(row->line_number, join_strings(2, "invalid instruction: ", row->operand), row->file_name);
         return FALSE;
     }
     op_mode = get_opcode_possible_modes(op_num);
-    if(row->parameters_count != opcode_has_source(op_mode) + opcode_has_destination(op_mode)){
-        export_error(row->line_number, join_strings(2, "invalid number of operands for instruction: ",row->operand), row->file_name);
+    if (row->parameters_count != opcode_has_source(op_mode) + opcode_has_destination(op_mode)) {
+        export_error(row->line_number, join_strings(2, "invalid number of operands for instruction: ", row->operand),
+                     row->file_name);
         return FALSE;
     }
-    if (!handle_instruction_operand(row, code_image, ic, &op_num, &op_mode, &raw_src_operand, &raw_dest_operand,
-                                    &src_op,
-                                    &dest_op)) {
-        return FALSE;
-    };
-    if (row->parameters_count == 0) {
-        return TRUE;
-    }
-    if (!handle_parameter_operands(row, code_image, ic, raw_src_operand, raw_dest_operand, src_op, dest_op)) {
-        return FALSE;
-    }
-
+    if (!handle_instruction_operand(row, code_image, ic, &op_num, &op_mode, &raw_src_operand, &raw_dest_operand, &src_op, &dest_op)) return FALSE;
+    if (row->parameters_count == 0) return TRUE;
+    if (!handle_parameter_operands(row, code_image, ic, raw_src_operand, raw_dest_operand, src_op, dest_op)) return FALSE;
 
     return TRUE;
 }
 
-
-
+/* TODO: fix indentation */
 Bool handle_parameter_operands(OperandRow *row, Word *code_image, int *ic, char *raw_src_operand, char *raw_dest_operand,
                           AddressingType const src_op, AddressingType const dest_op) {
     Register src_register, dest_register;
     Bool is_success = TRUE;
     if (row->parameters_count == 1) {
         if ((src_op) == NO_VALUE) {
-            is_success = code_word_from_operand(row, code_image, ic, raw_dest_operand, dest_op, DESTINATION);
+            CHECK_AND_UPDATE_SUCCESS(is_success,code_word_from_operand(row, code_image, ic, raw_dest_operand, dest_op, DESTINATION));
         } else {
-            is_success = code_word_from_operand(row, code_image, ic, raw_src_operand, src_op, SOURCE);
+            CHECK_AND_UPDATE_SUCCESS(is_success,code_word_from_operand(row, code_image, ic, raw_src_operand, src_op, SOURCE));
         }
     } else {
-        is_success = code_word_from_operand(row, code_image, ic, raw_src_operand, src_op, SOURCE);
+        CHECK_AND_UPDATE_SUCCESS(is_success,code_word_from_operand(row, code_image, ic, raw_src_operand, src_op, SOURCE));
         if (!((src_op) == REGISTER && dest_op == REGISTER)) {
-            is_success = code_word_from_operand(row, code_image, ic, raw_dest_operand, dest_op, DESTINATION);
+            CHECK_AND_UPDATE_SUCCESS(is_success,code_word_from_operand(row, code_image, ic, raw_dest_operand, dest_op, DESTINATION));
         } else {
             src_register = get_register(raw_src_operand);
             dest_register = get_register(raw_dest_operand);
             if (src_register == INVALID_REGISTER || dest_register == INVALID_REGISTER) {
-                if(src_register == INVALID_REGISTER){
-                    export_error(row->line_number, join_strings(2,"invalid register: ",raw_src_operand), row->file_name);
+                if (src_register == INVALID_REGISTER) {
+                    export_error(row->line_number, join_strings(2, "invalid register: ", raw_src_operand),
+                                 row->file_name);
                 }
-                if(dest_register == INVALID_REGISTER){
-                    export_error(row->line_number, join_strings(2,"invalid register: ",raw_dest_operand), row->file_name);
+                if (dest_register == INVALID_REGISTER) {
+                    export_error(row->line_number, join_strings(2, "invalid register: ", raw_dest_operand),
+                                 row->file_name);
                 }
                 return FALSE;
             }
@@ -191,25 +208,13 @@ Bool handle_parameter_operands(OperandRow *row, Word *code_image, int *ic, char 
     return is_success;
 }
 
-Bool validate_addressing_types(OpcodeMode const opcode_mode, AddressingType const src_op, AddressingType const dest_op) {
-    if (!opcode_mode.src_op.is_direct && src_op == DIRECT) {
-        return FALSE;
-    }
-    if (!opcode_mode.src_op.is_immediate && src_op == IMMEDIATE) {
-        return FALSE;
-    }
-    if (!opcode_mode.src_op.is_register && src_op == REGISTER) {
-        return FALSE;
-    }
-    if (!opcode_mode.dest_op.is_direct && dest_op == DIRECT) {
-        return FALSE;
-    }
-    if (!opcode_mode.dest_op.is_immediate && dest_op == IMMEDIATE) {
-        return FALSE;
-    }
-    if (!opcode_mode.dest_op.is_register && dest_op == REGISTER) {
-        return FALSE;
-    }
+Bool is_addressing_types_legal(OpcodeMode const opcode_mode, AddressingType const src_op, AddressingType const dest_op) {
+    if (!opcode_mode.src_op.is_direct && src_op == DIRECT) return FALSE;
+    if (!opcode_mode.src_op.is_immediate && src_op == IMMEDIATE) return FALSE;
+    if (!opcode_mode.src_op.is_register && src_op == REGISTER) return FALSE;
+    if (!opcode_mode.dest_op.is_direct && dest_op == DIRECT) return FALSE;
+    if (!opcode_mode.dest_op.is_immediate && dest_op == IMMEDIATE) return FALSE;
+    if (!opcode_mode.dest_op.is_register && dest_op == REGISTER) return FALSE;
     return TRUE;
 }
 
@@ -234,8 +239,9 @@ Bool handle_instruction_operand(const OperandRow *row, Word *code_image, int *ic
         *src_op = NO_VALUE;
         *dest_op = NO_VALUE;
     }
-    if(!validate_addressing_types((*op_mode), (*src_op), (*dest_op))){
-        export_error(row->line_number, join_strings(2,"invalid operand type for instruction: ",row->operand), (char *) row->file_name);
+    if (!is_addressing_types_legal((*op_mode), (*src_op), (*dest_op))) {
+        export_error(row->line_number, join_strings(2, "invalid operand type for instruction: ", row->operand),
+                     (char *) row->file_name);
         return FALSE;
     }
     parse_operand_to_word(code_image + *ic, (*op_num), (*src_op), (*dest_op));
@@ -244,10 +250,10 @@ Bool handle_instruction_operand(const OperandRow *row, Word *code_image, int *ic
 }
 
 void advance_operand_row(OperandRow *row) {
-    int i =0 ;
+    int i = 0;
     row->operand = row->parameters[0];
-    for(i=0;i<row->parameters_count-1;i++){
-        row->parameters[i] = row->parameters[i+1];
+    for (i = 0; i < row->parameters_count - 1; i++) {
+        row->parameters[i] = row->parameters[i + 1];
     }
     row->parameters_count--;
     row->parameters[i] = NULL;
@@ -275,19 +281,19 @@ InstructionType get_instruction_type(char *instruction) {
     }
 }
 
-void code_number_into_word_bits(Word *word, int number, int offset, int length){
+void code_number_into_word_bits(Word *word, int number, int offset, int length) {
     int i = 0;
     number = number & ((1 << length) - 1);
-    if(number < 0){
+    if (number < 0) {
         number = (1 << length) + number;
     }
-    for(i = 0; i < length; i++){
+    for (i = 0; i < length; i++) {
         word->bits[offset + i] = (number >> i) & 1;
     }
 }
 
-void build_opcode_mode(int src_is_immediate, int src_is_direct,int src_is_register,int dest_is_immediate,
-                       int dest_is_direct,int dest_is_register, OpcodeMode *opcode_mode) {
+void build_opcode_mode(int src_is_immediate, int src_is_direct, int src_is_register, int dest_is_immediate,
+                       int dest_is_direct, int dest_is_register, OpcodeMode *opcode_mode) {
     opcode_mode->src_op.is_register = src_is_register;
     opcode_mode->src_op.is_direct = src_is_direct;
     opcode_mode->src_op.is_immediate = src_is_immediate;
@@ -296,20 +302,20 @@ void build_opcode_mode(int src_is_immediate, int src_is_direct,int src_is_regist
     opcode_mode->dest_op.is_immediate = dest_is_immediate;
 }
 
-OpcodeMode get_opcode_possible_modes(Opcode opcode){
+OpcodeMode get_opcode_possible_modes(Opcode opcode) {
     OpcodeMode opcode_mode = {0};
     ParameterMode src_mode = {0};
     ParameterMode dest_mode = {0};
     opcode_mode.src_op = src_mode;
     opcode_mode.dest_op = dest_mode;
-    switch (opcode){
+    switch (opcode) {
         case MOV:
         case ADD:
         case SUB:
-            build_opcode_mode(TRUE,TRUE,TRUE,FALSE,TRUE,TRUE,&opcode_mode);
+            build_opcode_mode(TRUE, TRUE, TRUE, FALSE, TRUE, TRUE, &opcode_mode);
             break;
         case CMP:
-            build_opcode_mode(TRUE,TRUE,TRUE,TRUE,TRUE,TRUE,&opcode_mode);
+            build_opcode_mode(TRUE, TRUE, TRUE, TRUE, TRUE, TRUE, &opcode_mode);
             break;
         case NOT:
         case CLR:
@@ -319,20 +325,25 @@ OpcodeMode get_opcode_possible_modes(Opcode opcode){
         case BNE:
         case RED:
         case JSR:
-            build_opcode_mode(FALSE,FALSE,FALSE,FALSE,TRUE,TRUE,&opcode_mode);
+            build_opcode_mode(FALSE, FALSE, FALSE, FALSE, TRUE, TRUE, &opcode_mode);
             break;
         case LEA:
-            build_opcode_mode(FALSE,TRUE,FALSE,FALSE,TRUE,TRUE,&opcode_mode);
+            build_opcode_mode(FALSE, TRUE, FALSE, FALSE, TRUE, TRUE, &opcode_mode);
             break;
         case PRN:
-            build_opcode_mode(TRUE,TRUE,TRUE,FALSE,FALSE,FALSE,&opcode_mode);
+            build_opcode_mode(FALSE, FALSE, FALSE, TRUE, TRUE, TRUE, &opcode_mode);
             break;
         case RTS:
         case STOP:
-            build_opcode_mode(FALSE,FALSE,FALSE,FALSE,FALSE,FALSE,&opcode_mode);
+            build_opcode_mode(FALSE, FALSE, FALSE, FALSE, FALSE, FALSE, &opcode_mode);
             break;
         default:
-            build_opcode_mode(FALSE,FALSE,FALSE,FALSE,FALSE,FALSE,&opcode_mode);
+            build_opcode_mode(FALSE, FALSE, FALSE, FALSE, FALSE, FALSE, &opcode_mode);
     }
     return opcode_mode;
+}
+
+void get_word_addressing_types(Word *word, AddressingType *src, AddressingType *dest) {
+    *src = (AddressingType) (word->bits[9] + (word->bits[10] << 1) + (word->bits[11] << 2));
+    *dest = (AddressingType) (word->bits[2] + (word->bits[3] << 1) + (word->bits[4] << 2));
 }
