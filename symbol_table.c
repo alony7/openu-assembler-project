@@ -61,3 +61,12 @@ Symbol *get_symbol(SymbolTable *table, char *name) {
     return NULL;
 }
 
+int count_symbols_by_type(SymbolTable *table, InstructionType type) {
+    int i, count = 0;
+    for (i = 0; i < table->size; i++) {
+        if (table->symbols[i].type == type) {
+            count++;
+        }
+    }
+    return count;
+}

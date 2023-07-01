@@ -29,6 +29,7 @@ void free_symbol(Symbol *symbol);
 
 Symbol *create_symbol(char *name, int address, InstructionType type);
 
+int count_symbols_by_type(SymbolTable *table, InstructionType type);
 
 
 

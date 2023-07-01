@@ -6,14 +6,10 @@
 #include "utils.h"
 
 
-Bool handle_instruction_operand(const ParsedLine *line, Word *code_image, int *ic, Opcode *op_num, OpcodeMode *op_mode,
-                                char **raw_src_operand, char **raw_dest_operand, AddressingType *src_op,
-                                AddressingType *dest_op);
+Bool handle_instruction_operand(const ParsedLine *line, Word *code_image, int *ic, Opcode *op_num, OpcodeMode *op_mode, char **raw_src_operand, char **raw_dest_operand, AddressingType *src_op, AddressingType *dest_op);
 
 
-Bool
-handle_parameter_operands(ParsedLine *line, Word *code_image, int *ic, char *raw_src_operand, char *raw_dest_operand,
-                          AddressingType src_op, AddressingType dest_op);
+Bool handle_parameter_operands(ParsedLine *line, Word *code_image, int *ic, char *raw_src_operand, char *raw_dest_operand, AddressingType src_op, AddressingType dest_op);
 
 void parse_registers_to_word(Word *word, Register src_register, Register dest_register);
 
@@ -23,8 +19,7 @@ AddressingType get_addressing_type(char *operand);
 
 void parse_int_to_word(Word *word, int num, Bool add_ARE);
 
-Bool code_word_from_operand(ParsedLine *line, Word *code_image, int *ic, char *raw_operand,
-                            AddressingType addressing_type, OperandLocation location);
+Bool code_word_from_operand(ParsedLine *line, Word *code_image, int *ic, char *raw_operand, AddressingType addressing_type, OperandLocation location);
 
 void set_word_to_zero(Word *word);
 
