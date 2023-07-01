@@ -71,7 +71,7 @@ Bool is_empty_line(char *line) {
 }
 
 /* TODO: clean this */
-Opcode get_opcode(char *command) {
+InstructionCode get_instruction_code(char *command) {
     if (strcmp(command, MOV_COMMAND) == 0) {
         return MOV;
     } else if (strcmp(command, CMP_COMMAND) == 0) {

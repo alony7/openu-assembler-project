@@ -19,7 +19,7 @@ Bool is_string_equals(const char *line, const char *directive);
 
 Bool is_empty_line(char *line);
 
-Opcode get_opcode(char *command);
+InstructionCode get_instruction_code(char *command);
 
 Register get_register(char *operand);
 

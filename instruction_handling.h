@@ -22,7 +22,7 @@ typedef enum Opcode {
     RTS = 14,
     STOP = 15,
     INVALID_OPCODE = -1
-} Opcode;
+} InstructionCode;
 
 typedef struct {
     Bool bits[WORD_SIZE];
