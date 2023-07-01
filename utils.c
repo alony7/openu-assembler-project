@@ -216,4 +216,16 @@ void word_to_base64(Word *word, char *base64){
 
     // Convert the second 6 bits to a base 64 character
     base64[1] = base64_encode(first6Bits);
+
+    base64[2] = NULL_CHAR;
+}
+
+int is_word_empty(Word *word) {
+    int i;
+    for (i = 0; i < WORD_SIZE; i++) {
+        if (word->bits[i] != 0) {
+            return FALSE;
+        }
+    }
+    return TRUE;
 }
