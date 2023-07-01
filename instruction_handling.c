@@ -111,6 +111,7 @@ Bool address_string_instruction(ParsedLine *line, Word *data_image, int *dc) {
     return TRUE;
 }
 
+/* TODO: make this method not update  ic */
 Bool code_word_from_operand(ParsedLine *line, Word *code_image, int *ic, char *raw_operand, AddressingType const addressing_type, OperandLocation const location) {
     Register reg;
     if (addressing_type == IMMEDIATE) {

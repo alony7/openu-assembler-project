@@ -29,3 +29,4 @@ char *join_strings(int num_strings, ...);
 
 void trim_string_quotes(char *str);
 
+void word_to_base64(Word *word, char *base64);

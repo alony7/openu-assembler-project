@@ -5,7 +5,7 @@
 MAIN: mov @r3 ,LENGTH
 LOOP: jmp L1
 prn -5
-bfne W
+bne W
 sub @r1, @r4
 mcro acab
 bne L3
