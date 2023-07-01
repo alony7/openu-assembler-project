@@ -1,18 +1,18 @@
-#include <malloc.h>
 #include <string.h>
 #include <stdarg.h>
 #include "utils.h"
 #include "instruction_handling.h"
 #include "error.h"
+#include "memory_wrappers.h"
 
 char base64_encode(int value);
 
-        char *string_array_to_string(char **array, int size) {
+char *string_array_to_string(char **array, int size) {
     int i;
-    char *string = malloc(sizeof(char));
+    char *string = (char *) safe_malloc(sizeof(char));
     string[0] = NULL_CHAR;
     for (i = 0; i < size; i++) {
-        string = realloc(string, (strlen(string) + strlen(array[i]) + 1) * sizeof(char));
+        string = (char *) safe_realloc(string, (strlen(string) + strlen(array[i]) + 1) * sizeof(char));
         strcat(string, array[i]);
     }
     return string;
@@ -32,7 +32,7 @@ char *duplicate_string(const char *str) {
         return NULL;
     }
 
-    duplicate = malloc(strlen(str) + 1);
+    duplicate = (char *) safe_malloc(strlen(str) + 1);
 
     if (duplicate == NULL) {
         return NULL;
@@ -169,7 +169,7 @@ char *join_strings(int num_strings, ...) {
     }
     va_end(args);
 
-    result = (char *) malloc((total_length + 1) * sizeof(char));
+    result = (char *) safe_malloc((total_length + 1) * sizeof(char));
     if (result == NULL) {
         fprintf(stderr, "Memory allocation failed\n");
         return NULL;

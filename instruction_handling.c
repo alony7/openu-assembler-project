@@ -1,6 +1,5 @@
 
 #include "error.h"
-#include <malloc.h>
 #include <string.h>
 #include "instruction_handling.h"
 #include "utils.h"

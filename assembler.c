@@ -10,7 +10,7 @@
 
 static void execute_program(int argc, char *argv[]) {
     int i;
-    int ic,dc;
+    int ic, dc;
     Word data_image[MEMORY_SIZE];
     Word code_image[MEMORY_SIZE];
     char as_filename[MAX_FILENAME_LENGTH];
@@ -27,12 +27,12 @@ static void execute_program(int argc, char *argv[]) {
 
     /*TODO: extract to function*/
 
-    if(num_of_files <= 0){
+    if (num_of_files <= 0) {
         printf("No arguments were given. Exiting...\n");
         exit(1);
     }
 
-    for(i=1;i<=num_of_files;i++){
+    for (i = 1; i <= num_of_files; i++) {
         build_output_filename(argv[i], AS_FILE_EXTENSION, as_filename);
         build_output_filename(argv[i], AM_FILE_EXTENSION, am_filename);
         printf("Opening File: %s\n", as_filename);
@@ -45,7 +45,7 @@ static void execute_program(int argc, char *argv[]) {
         relocations_symbol_table = create_symbol_table();
         ic = MEMORY_OFFSET;
         dc = 0;
-        if(!first_step_process(data_image, code_image, label_symbol_table, relocations_symbol_table, &file_operands, am_filename,&ic,&dc)) {
+        if (!first_step_process(data_image, code_image, label_symbol_table, relocations_symbol_table, &file_operands, am_filename, &ic, &dc)) {
             throw_system_error(join_strings(3, "encountered errors while processing code. skipping file: '", am_filename, "' ..."), TRUE);
             free_symbol_table(label_symbol_table);
             free_symbol_table(relocations_symbol_table);
@@ -53,7 +53,7 @@ static void execute_program(int argc, char *argv[]) {
         }
         externals_symbol_table = create_symbol_table();
         ic = MEMORY_OFFSET;
-        if(!second_step_process(code_image, label_symbol_table, relocations_symbol_table,externals_symbol_table, file_operands, &ic)) {
+        if (!second_step_process(code_image, label_symbol_table, relocations_symbol_table, externals_symbol_table, file_operands, &ic)) {
             throw_system_error(join_strings(3, "encountered errors while processing code. skipping file: '", am_filename, "' ..."), TRUE);
             free_symbol_table(label_symbol_table);
             free_symbol_table(relocations_symbol_table);
@@ -63,11 +63,11 @@ static void execute_program(int argc, char *argv[]) {
         build_output_filename(argv[i], OB_FILE_EXTENSION, ob_filename);
         build_output_filename(argv[i], EXT_FILE_EXTENSION, ext_filename);
         build_output_filename(argv[i], ENT_FILE_EXTENSION, ent_filename);
-        generate_output_files(ob_filename,ent_filename,ext_filename, relocations_symbol_table,label_symbol_table,externals_symbol_table, &code_image, data_image,dc,ic);
+        generate_output_files(ob_filename, ent_filename, ext_filename, relocations_symbol_table, label_symbol_table, externals_symbol_table, &code_image, data_image, dc, ic);
         printf("File %s processed successfully\n", as_filename);
     }
 
-    }
+}
 
 
 /*TODO: add detailed comment*/
@@ -78,6 +78,7 @@ static void execute_program(int argc, char *argv[]) {
 /* TODO: remove export for internally used functions */
 /* TODO: add string termination to all strings */
 /* TODO: remove .idea from git */
+/* TODO: fix pragmas */
 int main(int argc, char *argv[]) {
     execute_program(argc, argv);
     return 0;

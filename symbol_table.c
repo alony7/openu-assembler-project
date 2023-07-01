@@ -3,19 +3,20 @@
 #include "symbol_table.h"
 #include "consts.h"
 #include "instruction_handling.h"
+#include "memory_wrappers.h"
 
 SymbolTable *create_symbol_table() {
     SymbolTable *table;
-    table = (SymbolTable *) malloc(sizeof(SymbolTable));
+    table = (SymbolTable *) safe_malloc(sizeof(SymbolTable));
     table->capacity = INITIAL_SYMBOL_TABLE_CAPACITY;
     table->size = 0;
-    table->symbols = (Symbol *) malloc(sizeof(Symbol) * table->capacity);
+    table->symbols = (Symbol *) safe_malloc(sizeof(Symbol) * table->capacity);
     return table;
 }
 
 Symbol *create_symbol(char *name, int address, InstructionType type) {
-    Symbol *symbol = (Symbol *) malloc(sizeof(Symbol));
-    symbol->name = (char *) malloc(strlen(name) + 1);
+    Symbol *symbol = (Symbol *) safe_malloc(sizeof(Symbol));
+    symbol->name = (char *) safe_malloc(strlen(name) + 1);
     strcpy(symbol->name, name);
     symbol->address = address;
     symbol->type = type;
@@ -25,7 +26,7 @@ Symbol *create_symbol(char *name, int address, InstructionType type) {
 Bool add_symbol(SymbolTable *table, Symbol *symbol) {
     if (table->size == table->capacity) {
         table->capacity += INITIAL_SYMBOL_TABLE_CAPACITY;
-        table->symbols = (Symbol *) realloc(table->symbols, table->capacity * sizeof(Symbol));
+        table->symbols = (Symbol *) safe_realloc(table->symbols, table->capacity * sizeof(Symbol));
         if (table->symbols == NULL) {
             return FALSE;
         }

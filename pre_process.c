@@ -28,7 +28,7 @@ Bool fill_macro_table(FileOperands *file_operands, MacroTable *table) {
                 printf("Error: invalid end of macro in line %d\n", line_number);
                 return FALSE;
             }
-            if(parsed_line.parameters_count != 0){
+            if (parsed_line.parameters_count != 0) {
                 printf("Error: invalid number of parameters for '%s' in line %d\n", END_MACRO_DIRECTIVE, line_number);
                 return FALSE;
             }
@@ -80,8 +80,7 @@ Bool rewrite_macros(FileOperands *file_operands, MacroTable *table, FILE *output
             is_macro = TRUE;
         } else if (is_string_equals(parsed_line.operand, END_MACRO_DIRECTIVE)) {
             is_macro = FALSE;
-        }
-        else {
+        } else {
             if (!is_macro) {
                 if (get_macro_item(table, parsed_line.operand) != NULL) {
                     current_item = get_macro_item(table, parsed_line.operand);
