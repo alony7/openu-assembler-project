@@ -22,6 +22,7 @@ static void execute_program(int argc, char *argv[]) {
     int num_of_files = argc - 1;
     SymbolTable *label_symbol_table = NULL;
     SymbolTable *relocations_symbol_table = NULL;
+    SymbolTable *externals_symbol_table = NULL;
 
 
     /*TODO: extract to function*/
@@ -50,39 +51,21 @@ static void execute_program(int argc, char *argv[]) {
             free_symbol_table(relocations_symbol_table);
             continue;
         }
+        externals_symbol_table = create_symbol_table();
         ic = MEMORY_OFFSET;
-        if(!second_step_process(code_image, label_symbol_table, relocations_symbol_table, file_operands, &ic)) {
+        if(!second_step_process(code_image, label_symbol_table, relocations_symbol_table,externals_symbol_table, file_operands, &ic)) {
             throw_system_error(join_strings(3, "encountered errors while processing code. skipping file: '", am_filename, "' ..."), TRUE);
             free_symbol_table(label_symbol_table);
             free_symbol_table(relocations_symbol_table);
+            free_symbol_table(externals_symbol_table);
             continue;
         }
         build_output_filename(argv[i], OB_FILE_EXTENSION, ob_filename);
         build_output_filename(argv[i], EXT_FILE_EXTENSION, ext_filename);
         build_output_filename(argv[i], ENT_FILE_EXTENSION, ent_filename);
-        generate_output_files(ob_filename,ent_filename,ext_filename, relocations_symbol_table,label_symbol_table, &code_image, data_image,dc,ic);
+        generate_output_files(ob_filename,ent_filename,ext_filename, relocations_symbol_table,label_symbol_table,externals_symbol_table, &code_image, data_image,dc,ic);
         printf("File %s processed successfully\n", as_filename);
     }
-
-    /* run first step assemble */
-     ;
-        //pretty print the whole code image, with a line for every word
-//        for(i = 100; i < 118; i++){
-//            char word[200] = "";
-//            for(j=0;j<=11;j++){
-//                word[11-j] = (code_image[i].bits[j]) + '0';
-//            }
-//            printf("%s\n", word);
-//        }
-//        for(i = 0; i < 11; i++){
-//            char word[200] = "";
-//            for(j=0;j<=11;j++){
-//                word[11-j] = (data_image[i].bits[j]) + '0';
-//            }
-//            printf("%s\n", word);
-//        }
-
-
 
     }
 
