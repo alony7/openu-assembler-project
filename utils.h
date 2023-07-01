@@ -19,7 +19,7 @@ Opcode get_opcode(char *command);
 
 Register get_register(char *operand);
 
-Bool is_register(char *operand);
+Bool is_register(const char *operand);
 
 Bool is_label(char *operand);
 

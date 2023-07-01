@@ -46,3 +46,5 @@
 #define STRING_BOUNDARY '"'
 #define ASCII_MAX 0x7f
 #define BASE64_WORD_LENGTH 2
+#define ARE_START_INDEX 0
+#define ARE_END_INDEX 2

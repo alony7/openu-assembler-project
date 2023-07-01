@@ -19,9 +19,13 @@ AddressingType get_addressing_type(char *operand);
 
 void parse_int_to_word(Word *word, int num, Bool add_ARE);
 
-Bool code_word_from_operand(ParsedLine *line, Word *code_image, int *ic, char *raw_operand, AddressingType addressing_type, OperandLocation location);
+Bool code_word_from_operand(ParsedLine *line, Word *code_image, int *ic, char *raw_operand, AddressingType addressing_type, OperandContext context);
 
 void set_word_to_zero(Word *word);
+
+static void code_number_into_word_bits(Word *word, int number, int offset, int length);
+
+static OpcodeMode get_opcode_possible_modes(Opcode opcode);
 
 void set_word_to_zero(Word *word) {
     int i;
@@ -37,14 +41,14 @@ void parse_symbol_to_word(int symbol_index, Word *word, AddressingMethod address
 
 void parse_registers_to_word(Word *word, Register src_register, Register dest_register) {
     set_word_to_zero(word);
-    code_number_into_word_bits(word, ABSOLUTE_ADDRESSING, 0, 2);
+    code_number_into_word_bits(word, ABSOLUTE_ADDRESSING, ARE_START_INDEX, ARE_END_INDEX);
     code_number_into_word_bits(word, dest_register, 2, 5);
     code_number_into_word_bits(word, src_register, 7, 5);
 }
 
 void parse_operand_to_word(Word *word, Opcode opcode, AddressingType src_op, AddressingType dest_op) {
     set_word_to_zero(word);
-    code_number_into_word_bits(word, ABSOLUTE_ADDRESSING, 0, 2);
+    code_number_into_word_bits(word, ABSOLUTE_ADDRESSING, ARE_START_INDEX, ARE_END_INDEX);
     code_number_into_word_bits(word, dest_op, 2, 3);
     code_number_into_word_bits(word, opcode, 5, 4);
     code_number_into_word_bits(word, src_op, 9, 3);
@@ -112,7 +116,7 @@ Bool address_string_instruction(ParsedLine *line, Word *data_image, int *dc) {
 }
 
 /* TODO: make this method not update  ic */
-Bool code_word_from_operand(ParsedLine *line, Word *code_image, int *ic, char *raw_operand, AddressingType const addressing_type, OperandLocation const location) {
+Bool code_word_from_operand(ParsedLine *line, Word *code_image, int *ic, char *raw_operand, AddressingType const addressing_type, OperandContext const context) {
     Register reg;
     if (addressing_type == IMMEDIATE) {
         parse_int_to_word(code_image + *ic, parse_int(raw_operand), TRUE);
@@ -126,7 +130,7 @@ Bool code_word_from_operand(ParsedLine *line, Word *code_image, int *ic, char *r
             throw_program_error(line->line_number, join_strings(2, "invalid register: ", raw_operand), line->file_name, TRUE);
             return FALSE;
         }
-        if (location == DESTINATION) {
+        if (context == DESTINATION) {
             parse_registers_to_word(&(code_image[*ic]), 0, reg);
         } else {
             parse_registers_to_word(&(code_image[*ic]), reg, 0);
@@ -269,7 +273,7 @@ InstructionType get_instruction_type(char *instruction) {
     }
 }
 
-void code_number_into_word_bits(Word *word, int number, int offset, int length) {
+static void code_number_into_word_bits(Word *word, int number, int offset, int length) {
     int i = 0;
     number = number & ((1 << length) - 1);
     if (number < 0) {
@@ -289,7 +293,7 @@ void build_opcode_mode(int src_is_immediate, int src_is_direct, int src_is_regis
     opcode_mode->dest_op.is_immediate = dest_is_immediate;
 }
 
-OpcodeMode get_opcode_possible_modes(Opcode opcode) {
+static OpcodeMode get_opcode_possible_modes(Opcode opcode) {
     OpcodeMode opcode_mode = {0};
     ParameterMode src_mode = {0};
     ParameterMode dest_mode = {0};

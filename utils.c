@@ -8,7 +8,7 @@
 char *string_array_to_string(char **array, int size) {
     int i;
     char *string = malloc(sizeof(char));
-    string[0] = '\0';
+    string[0] = NULL_CHAR;
     for (i = 0; i < size; i++) {
         string = realloc(string, (strlen(string) + strlen(array[i]) + 1) * sizeof(char));
         strcat(string, array[i]);
@@ -127,7 +127,7 @@ Register get_register(char *operand) {
     }
 }
 
-Bool is_register(char *operand) {
+Bool is_register(const char *operand) {
     if (operand[0] == REGISTER_PREFIX) {
         return TRUE;
     }
@@ -148,7 +148,7 @@ int parse_int(char *str) {
 /* TODO: free memory */
 char *join_strings(int num_strings, ...) {
     va_list args;
-    int total_length = 0;
+    unsigned int total_length = 0;
     char *result, *current;
     int i;
 
