@@ -66,15 +66,13 @@ static Bool process_line(ParsedLine *line, int *ic, Word *code_image, SymbolTabl
     return is_success;
 }
 
-Bool second_step_process(Word code_image[MEMORY_SIZE], SymbolTable *labels_table,
-                         SymbolTable *relocations_table, FileOperands *file_operands, char *file_name) {
+Bool second_step_process(Word code_image[MEMORY_SIZE], SymbolTable *labels_table, SymbolTable *relocations_table, FileOperands *file_operands,int *ic) {
     Bool is_success = TRUE;
     int i = 0;
-    int ic = MEMORY_OFFSET;
     ParsedLine *line = NULL;
     for (i = 0; i < file_operands->size; i++) {
         line = &file_operands->lines[i];
-        CHECK_AND_UPDATE_SUCCESS(is_success, process_line(line, &ic, code_image, labels_table, relocations_table));
+        CHECK_AND_UPDATE_SUCCESS(is_success, process_line(line, ic, code_image, labels_table, relocations_table));
     }
     return is_success;
 }

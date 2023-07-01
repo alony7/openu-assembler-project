@@ -2,6 +2,9 @@
 
 #define AS_FILE_EXTENSION ".as"
 #define AM_FILE_EXTENSION ".am"
+#define OB_FILE_EXTENSION ".ob"
+#define EXT_FILE_EXTENSION ".ext"
+#define ENT_FILE_EXTENSION ".ent"
 
 /* TODO: update to 100 */
 #define MEMORY_OFFSET 100
@@ -43,3 +46,5 @@
 #define NULL_CHAR '\0'
 #define STRING_BOUNDARY '"'
 #define ASCII_MAX 0x7f
+#define BASE64_WORD_LENGTH 2
+#define LINE_SEPARATOR '\n'

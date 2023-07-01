@@ -112,9 +112,7 @@ Bool handle_line(SymbolTable *labels_table, SymbolTable *relocations_table, Pars
 }
 
 
-Bool first_step_process(Word data_image[MEMORY_SIZE], Word code_image[MEMORY_SIZE], SymbolTable *labels_table, SymbolTable *relocations_table, FileOperands **file_operands, char *file_name) {
-    int ic = MEMORY_OFFSET;
-    int dc = 0;
+Bool first_step_process(Word data_image[MEMORY_SIZE], Word code_image[MEMORY_SIZE], SymbolTable *labels_table, SymbolTable *relocations_table, FileOperands **file_operands, char *file_name, int *ic, int *dc) {
     Bool is_success = TRUE;
     int i;
     ParsedLine *current_line;
@@ -126,9 +124,9 @@ Bool first_step_process(Word data_image[MEMORY_SIZE], Word code_image[MEMORY_SIZ
     for (i = 0; i < (*file_operands)->size; i++) {
         current_line = &((*file_operands)->lines[i]);
         current_line->line_number = i + 1;
-        CHECK_AND_UPDATE_SUCCESS(is_success, handle_line(labels_table, relocations_table, current_line, data_image, code_image, &ic, &dc));
+        CHECK_AND_UPDATE_SUCCESS(is_success, handle_line(labels_table, relocations_table, current_line, data_image, code_image, ic, dc));
     }
-    add_ic_to_all_data_addresses(labels_table, ic);
+    add_ic_to_all_data_addresses(labels_table, *ic);
 
     fclose(file);
     return is_success;
