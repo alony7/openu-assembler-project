@@ -3,6 +3,11 @@
 #include "instruction_handling.h"
 #include "error.h"
 
+static Bool handle_line(SymbolTable *labels_table, SymbolTable *relocations_table, ParsedLine *line, Word *data_image, Word *code_image, int *ic, int *dc);
+
+static Bool parse_label(ParsedLine *line, SymbolTable *labels_table, SymbolTable *relocations_table, int *ic, int *dc, InstructionType *next_instruction_type);
+
+static void add_ic_to_all_data_addresses(SymbolTable *table, int ic);
 
 static void add_ic_to_all_data_addresses(SymbolTable *table, int ic) {
     Symbol *symbol;
@@ -16,7 +21,7 @@ static void add_ic_to_all_data_addresses(SymbolTable *table, int ic) {
 
 }
 
-Bool parse_label(ParsedLine *line, SymbolTable *labels_table, SymbolTable *relocations_table, int *ic, int *dc, InstructionType *next_instruction_type) {
+static Bool parse_label(ParsedLine *line, SymbolTable *labels_table, SymbolTable *relocations_table, int *ic, int *dc, InstructionType *next_instruction_type) {
     Symbol *symbol = NULL;
     InstructionType label_instruction_type;
     line->operand[strlen(line->operand) - 1] = NULL_CHAR;
@@ -54,8 +59,7 @@ Bool parse_label(ParsedLine *line, SymbolTable *labels_table, SymbolTable *reloc
     return TRUE;
 }
 
-Bool handle_line(SymbolTable *labels_table, SymbolTable *relocations_table, ParsedLine *line, Word *data_image, Word *code_image, int *ic, int *dc) {
-    int i;
+static Bool handle_line(SymbolTable *labels_table, SymbolTable *relocations_table, ParsedLine *line, Word *data_image, Word *code_image, int *ic, int *dc) {
     Symbol *symbol;
     Bool is_success = TRUE;
     InstructionType instruction_type;
@@ -107,7 +111,6 @@ Bool handle_line(SymbolTable *labels_table, SymbolTable *relocations_table, Pars
             throw_program_error(line->line_number, join_strings(2, "invalid instruction: ", line->operand), line->file_name, TRUE);
             return FALSE;
     }
-    /*TODO: validate every entry is in the table*/
     return is_success;
 }
 

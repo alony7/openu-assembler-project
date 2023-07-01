@@ -6,7 +6,6 @@
 #define EXT_FILE_EXTENSION ".ext"
 #define ENT_FILE_EXTENSION ".ent"
 
-/* TODO: update to 100 */
 #define MEMORY_OFFSET 100
 #define MEMORY_SIZE 1024
 #define WORD_SIZE 12
@@ -47,4 +46,3 @@
 #define STRING_BOUNDARY '"'
 #define ASCII_MAX 0x7f
 #define BASE64_WORD_LENGTH 2
-#define LINE_SEPARATOR '\n'
