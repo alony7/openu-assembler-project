@@ -13,6 +13,7 @@ static Bool is_string_equal(const char *line, const char *directive) {
     return !strcmp(line, directive);
 }
 
+//TODO: refactor printf to error handling
 static Bool fill_macro_table(FileOperands *file_operands, MacroTable *table) {
     int row_number = 0;
     char *raw_line;
@@ -108,7 +109,7 @@ static Bool rewrite_macros(FileOperands *file_operands, MacroTable *table, FILE 
     return TRUE;
 }
 
-static Bool expand_file_macros(char *input_filename, char *output_filename) {
+Bool expand_file_macros(char *input_filename, char *output_filename) {
     FILE *input_file, *output_file;
     Bool result = TRUE;
     FileOperands *parsed_input_file;
@@ -116,7 +117,7 @@ static Bool expand_file_macros(char *input_filename, char *output_filename) {
     input_file = create_file_stream(input_filename, READ_MODE);
     output_file = create_file_stream(output_filename, WRITE_MODE);
     if (!output_file) {
-        printf("Error: Failed to create file %s\n", output_filename);
+        throw_system_error("Failed to create file", output_filename,FALSE);
         return FALSE;
     }
      macro_table = create_macro_table();
@@ -133,25 +134,4 @@ static Bool expand_file_macros(char *input_filename, char *output_filename) {
 }
 
 
-static void build_output_filename(char *base_name, char *suffix, char *output_buffer) {
-    strcpy(output_buffer, base_name);
-    strcat(output_buffer, suffix);
-}
 
-Bool expand_macros(char *filenames[], int num_of_files) {
-    int i;
-    char filename_with_as_extension[MAX_FILENAME_LENGTH];
-    char filename_with_am_extension[MAX_FILENAME_LENGTH];
-    for (i = 0; i < num_of_files; i++) {
-        build_output_filename(filenames[i], AM_FILE_EXTENSION, filename_with_am_extension);
-        build_output_filename(filenames[i], AS_FILE_EXTENSION, filename_with_as_extension);
-        printf("Opening File: %s\n", filename_with_as_extension);
-
-        if (expand_file_macros(filename_with_as_extension, filename_with_am_extension)) {
-            printf("File %s expanded successfully\n", filename_with_as_extension);
-        } else {
-            printf("Error: Failed to expand file %s\n", filename_with_as_extension);
-        }
-    }
-    return TRUE;
-}

@@ -1,8 +1,7 @@
 #pragma once
 
-typedef struct ErrContext {
-    char *file_name;
-    int line_number;
-} ErrContext;
+#include "util_types.h"
 
-void export_error(int line_number, char *error_message, char *file_name);
+void throw_program_error(int line_number, char *error_message, char *file_name, Bool should_free_smg);
+
+void throw_system_error(char *error_message,char *file_name , Bool should_free_smg);

@@ -26,9 +26,9 @@ void parse_int_to_word(Word *word, int num, Bool add_ARE);
 Bool code_word_from_operand(OperandRow *row, Word *code_image, int *ic, char *raw_operand,
                             AddressingType addressing_type, OperandLocation location);
 
-void empty_word(Word *word);
+void set_word_to_zero(Word *word);
 
-void empty_word(Word *word) {
+void set_word_to_zero(Word *word) {
     int i;
     for (i = 0; i < WORD_SIZE; i++) {
         word->bits[i] = FALSE;
@@ -41,14 +41,14 @@ void parse_symbol_to_word(int symbol_index, Word *word, AddressingMethod address
 }
 
 void parse_registers_to_word(Word *word, Register src_register, Register dest_register) {
-    empty_word(word);
+    set_word_to_zero(word);
     code_number_into_word_bits(word, ABSOLUTE_ADDRESSING, 0, 2);
     code_number_into_word_bits(word, dest_register, 2, 5);
     code_number_into_word_bits(word, src_register, 7, 5);
 }
 
 void parse_operand_to_word(Word *word, Opcode opcode, AddressingType src_op, AddressingType dest_op) {
-    empty_word(word);
+    set_word_to_zero(word);
     code_number_into_word_bits(word, ABSOLUTE_ADDRESSING, 0, 2);
     code_number_into_word_bits(word, dest_op, 2, 3);
     code_number_into_word_bits(word, opcode, 5, 4);
@@ -89,12 +89,12 @@ Bool is_legal_string_row(OperandRow *row) {
     int i;
     char *string = row->parameters[0];
     if (string[0] != STRING_BOUNDARY || string[strlen(string) - 1] != STRING_BOUNDARY) {
-        export_error(row->line_number, "string must be enclosed in double quotes", row->file_name);
+        throw_program_error(row->line_number, "string must be enclosed in double quotes", row->file_name, FALSE);
         return FALSE;
     }
     for (i = 0; i < strlen(string); i++) {
-        if ((string[i] & ~0x7f) != 0) {
-            export_error(row->line_number, "string contains non-ascii characters", row->file_name);
+        if ((string[i] & ~ASCII_MAX) != 0) {
+            throw_program_error(row->line_number, "string contains non-ascii characters", row->file_name, FALSE);
             return FALSE;
         }
     }
@@ -122,12 +122,12 @@ Bool code_word_from_operand(OperandRow *row, Word *code_image, int *ic, char *ra
         parse_int_to_word(code_image + *ic, parse_int(raw_operand), TRUE);
         (*ic)++;
     } else if (addressing_type == DIRECT) {
-        empty_word(&code_image[*ic]);
+        set_word_to_zero(&code_image[*ic]);
         (*ic)++;
     } else {
         reg = get_register(raw_operand);
         if (reg == INVALID_REGISTER) {
-            export_error(row->line_number, join_strings(2, "invalid register: ", raw_operand), row->file_name);
+            throw_program_error(row->line_number, join_strings(2, "invalid register: ", raw_operand), row->file_name, TRUE);
             return FALSE;
         }
         if (location == DESTINATION) {
@@ -156,12 +156,12 @@ Bool address_code_instruction(OperandRow *row, Word *code_image, int *ic) {
 
     Opcode op_num = get_opcode(row->operand);
     if (op_num == INVALID_OPCODE) {
-        export_error(row->line_number, join_strings(2, "invalid instruction: ", row->operand), row->file_name);
+        throw_program_error(row->line_number, join_strings(2, "invalid instruction: ", row->operand), row->file_name, TRUE);
         return FALSE;
     }
     op_mode = get_opcode_possible_modes(op_num);
     if (row->parameters_count != opcode_has_source(op_mode) + opcode_has_destination(op_mode)) {
-        export_error(row->line_number, join_strings(2, "invalid number of operands for instruction: ", row->operand), row->file_name);
+        throw_program_error(row->line_number, join_strings(2, "invalid number of operands for instruction: ", row->operand), row->file_name, TRUE);
         return FALSE;
     }
     if (!handle_instruction_operand(row, code_image, ic, &op_num, &op_mode, &raw_src_operand, &raw_dest_operand, &src_op, &dest_op)) return FALSE;
@@ -181,22 +181,23 @@ Bool handle_parameter_operands(OperandRow *row, Word *code_image, int *ic, char 
             CHECK_AND_UPDATE_SUCCESS(is_success, code_word_from_operand(row, code_image, ic, raw_src_operand, src_op, SOURCE));
         }
     } else {
-        CHECK_AND_UPDATE_SUCCESS(is_success, code_word_from_operand(row, code_image, ic, raw_src_operand, src_op, SOURCE));
-        if (!((src_op) == REGISTER && dest_op == REGISTER)) {
-            CHECK_AND_UPDATE_SUCCESS(is_success, code_word_from_operand(row, code_image, ic, raw_dest_operand, dest_op, DESTINATION));
-        } else {
-            src_register = get_register(raw_src_operand);
-            dest_register = get_register(raw_dest_operand);
-            if (src_register == INVALID_REGISTER || dest_register == INVALID_REGISTER) {
-                if (src_register == INVALID_REGISTER) {
-                    export_error(row->line_number, join_strings(2, "invalid register: ", raw_src_operand), row->file_name);
+        if (CHECK_AND_UPDATE_SUCCESS(is_success, code_word_from_operand(row, code_image, ic, raw_src_operand, src_op, SOURCE))) {
+            if (!((src_op) == REGISTER && dest_op == REGISTER)) {
+                CHECK_AND_UPDATE_SUCCESS(is_success, code_word_from_operand(row, code_image, ic, raw_dest_operand, dest_op, DESTINATION));
+            } else {
+                src_register = get_register(raw_src_operand);
+                dest_register = get_register(raw_dest_operand);
+                if (src_register == INVALID_REGISTER || dest_register == INVALID_REGISTER) {
+                    if (src_register == INVALID_REGISTER) {
+                        throw_program_error(row->line_number, join_strings(2, "invalid register: ", raw_src_operand), row->file_name, TRUE);
+                    }
+                    if (dest_register == INVALID_REGISTER) {
+                        throw_program_error(row->line_number, join_strings(2, "invalid register: ", raw_dest_operand), row->file_name, TRUE);
+                    }
+                    return FALSE;
                 }
-                if (dest_register == INVALID_REGISTER) {
-                    export_error(row->line_number, join_strings(2, "invalid register: ", raw_dest_operand), row->file_name);
-                }
-                return FALSE;
+                parse_registers_to_word(&(code_image[*ic - 1]), src_register, dest_register);
             }
-            parse_registers_to_word(&(code_image[*ic - 1]), src_register, dest_register);
         }
     }
     return is_success;
@@ -232,7 +233,7 @@ Bool handle_instruction_operand(const OperandRow *row, Word *code_image, int *ic
         *dest_op = NO_VALUE;
     }
     if (!is_addressing_types_legal((*op_mode), (*src_op), (*dest_op))) {
-        export_error(row->line_number, join_strings(2, "invalid operand type for instruction: ", row->operand), (char *) row->file_name);
+        throw_program_error(row->line_number, join_strings(2, "invalid operand type for instruction: ", row->operand), (char *) row->file_name, TRUE);
         return FALSE;
     }
     parse_operand_to_word(code_image + *ic, (*op_num), (*src_op), (*dest_op));

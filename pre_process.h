@@ -1,2 +1,5 @@
 #pragma once
-Bool expand_macros(char *filenames[], int num_of_files);
+
+#include "util_types.h"
+
+Bool expand_file_macros(char *input_filename, char *output_filename);

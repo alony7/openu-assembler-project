@@ -100,3 +100,8 @@ void free_file_operands(FileOperands *file_operands){
     free(file_operands->rows);
     free(file_operands);
 }
+
+void build_output_filename(char *base_name, char *suffix, char *output_buffer) {
+    strcpy(output_buffer, base_name);
+    strcat(output_buffer, suffix);
+}

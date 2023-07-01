@@ -21,15 +21,15 @@ Bool parse_label(OperandRow *row, SymbolTable *labels_table, SymbolTable *reloca
     InstructionType label_instruction_type;
     row->operand[strlen(row->operand) - 1] = NULL_CHAR;
     if (row->parameters_count == 0) {
-        export_error(row->line_number, "empty label", row->file_name);
+        throw_program_error(row->line_number, "empty label", row->file_name, FALSE);
         return FALSE;
     }
     if (get_symbol(labels_table, row->operand) != NULL) {
-        export_error(row->line_number, join_strings(3, "label '", row->operand, "' has already been declared"), row->file_name);
+        throw_program_error(row->line_number, join_strings(3, "label '", row->operand, "' has already been declared"), row->file_name, TRUE);
         return FALSE;
     }
     if ((symbol = get_symbol(relocations_table, row->operand)) != NULL && symbol->type == EXTERN) {
-        export_error(row->line_number, join_strings(3, "label '", row->operand, "' has already been declared as external"), row->file_name);
+        throw_program_error(row->line_number, join_strings(3, "label '", row->operand, "' has already been declared as external"), row->file_name, TRUE);
         return FALSE;
     }
     label_instruction_type = get_instruction_type(row->parameters[0]);
@@ -45,7 +45,7 @@ Bool parse_label(OperandRow *row, SymbolTable *labels_table, SymbolTable *reloca
             break;
         default:
             if (row->parameters[0][0] == '.') {
-                export_error(row->line_number, join_strings(2, "invalid instruction type: ", row->parameters[0]), row->file_name);
+                throw_program_error(row->line_number, join_strings(2, "invalid instruction type: ", row->parameters[0]), row->file_name, TRUE);
                 return FALSE;
             }
     }
@@ -79,14 +79,14 @@ Bool handle_row(SymbolTable *labels_table, SymbolTable *relocations_table, Opera
             CHECK_AND_UPDATE_SUCCESS(is_success, address_string_instruction(row, data_image, dc));
             break;
         case (LABEL):
-            export_error(row->line_number, "nested labels are not allowed", row->file_name);
+            throw_program_error(row->line_number, "nested labels are not allowed", row->file_name, FALSE);
         case (EXTERN):
             if (get_symbol(relocations_table, row->parameters[0]) != NULL) {
-                export_error(row->line_number, join_strings(3, "label '", row->parameters[0], "' is already declared as entry or extern"), row->file_name);
+                throw_program_error(row->line_number, join_strings(3, "label '", row->parameters[0], "' is already declared as entry or extern"), row->file_name, TRUE);
                 return FALSE;
             }
             if (get_symbol(labels_table, row->parameters[0]) != NULL) {
-                export_error(row->line_number, join_strings(3, "label '", row->parameters[0], "' cannot be external since it is defined in this file"), row->file_name);
+                throw_program_error(row->line_number, join_strings(3, "label '", row->parameters[0], "' cannot be external since it is defined in this file"), row->file_name, TRUE);
                 return FALSE;
             }
             symbol = create_symbol(row->parameters[0], 0, EXTERN);
@@ -94,7 +94,7 @@ Bool handle_row(SymbolTable *labels_table, SymbolTable *relocations_table, Opera
             break;
         case (ENTRY):
             if (get_symbol(relocations_table, row->parameters[0]) != NULL) {
-                export_error(row->line_number, join_strings(3, "label '", row->parameters[0], "' is already marked as extern or entry"), row->file_name);
+                throw_program_error(row->line_number, join_strings(3, "label '", row->parameters[0], "' is already marked as extern or entry"), row->file_name, TRUE);
                 return FALSE;
             }
             symbol = create_symbol(row->parameters[0], *ic, ENTRY);
@@ -104,7 +104,7 @@ Bool handle_row(SymbolTable *labels_table, SymbolTable *relocations_table, Opera
             CHECK_AND_UPDATE_SUCCESS(is_success, address_code_instruction(row, code_image, ic));
             break;
         default:
-            export_error(row->line_number, join_strings(2, "invalid instruction: ", row->operand), row->file_name);
+            throw_program_error(row->line_number, join_strings(2, "invalid instruction: ", row->operand), row->file_name, TRUE);
             return FALSE;
     }
     /*TODO: validate every entry is in the table*/

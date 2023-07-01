@@ -28,3 +28,5 @@ FileOperands *parse_file_to_operand_rows(FILE *file,char *file_name);
 void free_operand_row(OperandRow *row);
 
 void free_file_operands(FileOperands *file_operands);
+
+void build_output_filename(char *base_name, char *suffix, char *output_buffer);

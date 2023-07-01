@@ -18,9 +18,7 @@ static Bool rewrite_operand_word(AddressingType operand_type, int *ic, Word *cod
                 is_external = relocation_symbol->type == EXTERN;
             }
             if (label_symbol == NULL && is_external == FALSE) {
-                export_error(row->line_number,
-                             join_strings(3, "label '", row->parameters[parameter_index], "' is not defined"),
-                             row->file_name);
+                throw_program_error(row->line_number,join_strings(3, "label '", row->parameters[parameter_index], "' is not defined"),row->file_name, TRUE);
                 return FALSE;
             }
             if (is_external) {
@@ -44,7 +42,7 @@ static Bool process_line(OperandRow *row, int *ic, Word *code_image, SymbolTable
     switch (get_instruction_type(row->operand)) {
         case (LABEL):
             /* TODO: validate operand rows are not destroyed */
-            export_error(row->line_number, "nested labels are not allowed", row->file_name);
+            throw_program_error(row->line_number, "nested labels are not allowed", row->file_name, FALSE);
             return FALSE;
         case (COMMAND):
 
@@ -58,12 +56,9 @@ static Bool process_line(OperandRow *row, int *ic, Word *code_image, SymbolTable
                 (*ic)++;
                 return TRUE;
             }
-            CHECK_AND_UPDATE_SUCCESS(is_success, rewrite_operand_word(src_operand_type, ic, code_image, labels_table,
-                                                                      relocations_table, row, 0));
+            CHECK_AND_UPDATE_SUCCESS(is_success, rewrite_operand_word(src_operand_type, ic, code_image, labels_table,relocations_table, row, 0));
             (*ic) += (src_operand_type != NO_VALUE);
-            CHECK_AND_UPDATE_SUCCESS(is_success, rewrite_operand_word(dest_operand_type, ic, code_image, labels_table,
-                                                                      relocations_table, row,
-                                                                      src_operand_type == NO_VALUE ? 0 : 1));
+            CHECK_AND_UPDATE_SUCCESS(is_success, rewrite_operand_word(dest_operand_type, ic, code_image, labels_table,relocations_table, row,src_operand_type == NO_VALUE ? 0 : 1));
             (*ic) += (dest_operand_type != NO_VALUE);
         default:
             break;

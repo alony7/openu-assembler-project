@@ -42,3 +42,4 @@
 #define REGISTER_LETTER 'r'
 #define NULL_CHAR '\0'
 #define STRING_BOUNDARY '"'
+#define ASCII_MAX 0x7f
