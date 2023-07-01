@@ -52,7 +52,6 @@ Bool process_line(ParsedLine *line, int *ic, Word *code_image, SymbolTable *labe
             }
             break;
         case (LABEL):
-            /* TODO: validate operand lines are not destroyed */
             throw_program_error(line->line_number, "nested labels are not allowed", line->file_name, FALSE);
             return FALSE;
         case (COMMAND):

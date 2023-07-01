@@ -71,10 +71,7 @@ static void execute_program(int argc, char *argv[]) {
 
 
 /*TODO: add detailed comment*/
-/* TODO: move function declaratios to head of headers */
-/* TODO: remove export for internally used functions */
 /* TODO: add string termination to all strings */
-/* TODO: remove .idea from git */
 /* TODO: fix pragmas */
 int main(int argc, char *argv[]) {
     execute_program(argc, argv);

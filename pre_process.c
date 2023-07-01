@@ -62,7 +62,7 @@ Bool fill_macro_table(FileOperands *file_operands, MacroTable *table) {
     return TRUE;
 }
 
-/*TODO: Check if i need to delete empty lines and comments*/
+/* TODO: Check if i need to delete empty lines and comments*/
 Bool rewrite_macros(FileOperands *file_operands, MacroTable *table, FILE *output_file) {
     int line_number = 0;
     Bool is_macro = FALSE;
@@ -74,28 +74,25 @@ Bool rewrite_macros(FileOperands *file_operands, MacroTable *table, FILE *output
         parsed_line = file_operands->lines[line_number];
         raw_line = line_output = parsed_line.original_line;
         /* comment line */
-        if (is_comment(raw_line) || is_empty_line(raw_line)) {
-            continue;
-        } else if (is_string_equals(parsed_line.operand, START_MACRO_DIRECTIVE)) {
-            is_macro = TRUE;
-        } else if (is_string_equals(parsed_line.operand, END_MACRO_DIRECTIVE)) {
-            is_macro = FALSE;
-        } else {
-            if (!is_macro) {
-                if (get_macro_item(table, parsed_line.operand) != NULL) {
-                    current_item = get_macro_item(table, parsed_line.operand);
-                    if (line_number < current_item->line_number) {
-                        printf("Error: macro '%s' is used before definition in line %d\n", current_item->name,
-                               line_number);
-                        return FALSE;
-                    }
-                    line_output = string_array_to_string(current_item->value, current_item->value_size);
-
-                } else {
-                    line_output = raw_line;
+        if (is_comment(raw_line) || is_empty_line(raw_line)) continue;
+        else if (is_string_equals(parsed_line.operand, START_MACRO_DIRECTIVE)) is_macro = TRUE;
+        else if (is_string_equals(parsed_line.operand, END_MACRO_DIRECTIVE)) is_macro = FALSE;
+        else {
+            if (is_macro) continue;
+            else if (get_macro_item(table, parsed_line.operand) != NULL) {
+                current_item = get_macro_item(table, parsed_line.operand);
+                if (line_number < current_item->line_number) {
+                    printf("Error: macro '%s' is used before definition in line %d\n", current_item->name,
+                           line_number);
+                    return FALSE;
                 }
-                fputs(line_output, output_file);
+                line_output = string_array_to_string(current_item->value, current_item->value_size);
+
+            } else {
+                line_output = raw_line;
             }
+            fputs(line_output, output_file);
+
 
         }
     }

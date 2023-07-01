@@ -1,10 +1,12 @@
 ; file ps.as
     .entry LENGTH
     .extern W
-MAIN: mov @r3 ,STR
-MAINO: mov @r3 ,LENGTH
+MAIN: mov @r3 ,LENGTH
 LOOP: jmp L1
+mcro EX
 prn -5
+endmcro
+EX
 bne W
 sub @r1, @r4
     bne L3
