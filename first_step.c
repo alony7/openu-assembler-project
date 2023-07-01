@@ -16,8 +16,7 @@ static void add_ic_to_all_data_addresses(SymbolTable *table, int ic) {
 
 }
 
-Bool parse_label(OperandRow *row, SymbolTable *labels_table, SymbolTable *relocations_table, int *ic, int *dc,
-                 InstructionType *next_instruction_type) {
+Bool parse_label(OperandRow *row, SymbolTable *labels_table, SymbolTable *relocations_table, int *ic, int *dc, InstructionType *next_instruction_type) {
     Symbol *symbol = NULL;
     InstructionType label_instruction_type;
     row->operand[strlen(row->operand) - 1] = NULL_CHAR;
@@ -26,14 +25,11 @@ Bool parse_label(OperandRow *row, SymbolTable *labels_table, SymbolTable *reloca
         return FALSE;
     }
     if (get_symbol(labels_table, row->operand) != NULL) {
-        export_error(row->line_number, join_strings(3, "label '", row->operand, "' has already been declared"),
-                     row->file_name);
+        export_error(row->line_number, join_strings(3, "label '", row->operand, "' has already been declared"), row->file_name);
         return FALSE;
     }
     if ((symbol = get_symbol(relocations_table, row->operand)) != NULL && symbol->type == EXTERN) {
-        export_error(row->line_number,
-                     join_strings(3, "label '", row->operand, "' has already been declared as external"),
-                     row->file_name);
+        export_error(row->line_number, join_strings(3, "label '", row->operand, "' has already been declared as external"), row->file_name);
         return FALSE;
     }
     label_instruction_type = get_instruction_type(row->parameters[0]);
@@ -49,8 +45,7 @@ Bool parse_label(OperandRow *row, SymbolTable *labels_table, SymbolTable *reloca
             break;
         default:
             if (row->parameters[0][0] == '.') {
-                export_error(row->line_number, join_strings(2, "invalid instruction type: ", row->parameters[0]),
-                             row->file_name);
+                export_error(row->line_number, join_strings(2, "invalid instruction type: ", row->parameters[0]), row->file_name);
                 return FALSE;
             }
     }
@@ -59,8 +54,7 @@ Bool parse_label(OperandRow *row, SymbolTable *labels_table, SymbolTable *reloca
     return TRUE;
 }
 
-Bool handle_row(SymbolTable *labels_table, SymbolTable *relocations_table, OperandRow *row, Word *data_image,
-                Word *code_image, int *ic, int *dc) {
+Bool handle_row(SymbolTable *labels_table, SymbolTable *relocations_table, OperandRow *row, Word *data_image, Word *code_image, int *ic, int *dc) {
     int i;
     Symbol *symbol;
     Bool is_success = TRUE;
@@ -79,24 +73,20 @@ Bool handle_row(SymbolTable *labels_table, SymbolTable *relocations_table, Opera
         case (EMPTY_ROW):
             return TRUE;
         case (DATA):
-            CHECK_AND_UPDATE_SUCCESS(is_success,address_data_instruction(row, data_image, dc));
+            CHECK_AND_UPDATE_SUCCESS(is_success, address_data_instruction(row, data_image, dc));
             break;
         case (STRING):
-            CHECK_AND_UPDATE_SUCCESS(is_success,address_string_instruction(row, data_image, dc));
+            CHECK_AND_UPDATE_SUCCESS(is_success, address_string_instruction(row, data_image, dc));
             break;
         case (LABEL):
             export_error(row->line_number, "nested labels are not allowed", row->file_name);
         case (EXTERN):
             if (get_symbol(relocations_table, row->parameters[0]) != NULL) {
-                export_error(row->line_number,
-                             join_strings(3, "label '", row->parameters[0], "' is already declared as entry or extern"),
-                             row->file_name);
+                export_error(row->line_number, join_strings(3, "label '", row->parameters[0], "' is already declared as entry or extern"), row->file_name);
                 return FALSE;
             }
             if (get_symbol(labels_table, row->parameters[0]) != NULL) {
-                export_error(row->line_number, join_strings(3, "label '", row->parameters[0],
-                                                            "' cannot be external since it is defined in this file"),
-                             row->file_name);
+                export_error(row->line_number, join_strings(3, "label '", row->parameters[0], "' cannot be external since it is defined in this file"), row->file_name);
                 return FALSE;
             }
             symbol = create_symbol(row->parameters[0], 0, EXTERN);
@@ -104,16 +94,14 @@ Bool handle_row(SymbolTable *labels_table, SymbolTable *relocations_table, Opera
             break;
         case (ENTRY):
             if (get_symbol(relocations_table, row->parameters[0]) != NULL) {
-                export_error(row->line_number,
-                             join_strings(3, "label '", row->parameters[0], "' is already marked as extern or entry"),
-                             row->file_name);
+                export_error(row->line_number, join_strings(3, "label '", row->parameters[0], "' is already marked as extern or entry"), row->file_name);
                 return FALSE;
             }
             symbol = create_symbol(row->parameters[0], *ic, ENTRY);
             add_symbol(relocations_table, symbol);
             break;
         case (COMMAND):
-            CHECK_AND_UPDATE_SUCCESS(is_success,address_code_instruction(row, code_image, ic));
+            CHECK_AND_UPDATE_SUCCESS(is_success, address_code_instruction(row, code_image, ic));
             break;
         default:
             export_error(row->line_number, join_strings(2, "invalid instruction: ", row->operand), row->file_name);
@@ -124,8 +112,7 @@ Bool handle_row(SymbolTable *labels_table, SymbolTable *relocations_table, Opera
 }
 
 
-Bool first_step_process(Word data_image[MEMORY_SIZE], Word code_image[MEMORY_SIZE],SymbolTable *labels_table, SymbolTable *relocations_table, FileOperands **file_operands,
-                        char *file_name) {
+Bool first_step_process(Word data_image[MEMORY_SIZE], Word code_image[MEMORY_SIZE], SymbolTable *labels_table, SymbolTable *relocations_table, FileOperands **file_operands, char *file_name) {
     int ic = MEMORY_OFFSET;
     int dc = 0;
     Bool is_success = TRUE;
@@ -139,7 +126,7 @@ Bool first_step_process(Word data_image[MEMORY_SIZE], Word code_image[MEMORY_SIZ
     for (i = 0; i < (*file_operands)->size; i++) {
         current_row = &((*file_operands)->rows[i]);
         current_row->line_number = i + 1;
-        CHECK_AND_UPDATE_SUCCESS(is_success,handle_row(labels_table, relocations_table, current_row, data_image, code_image, &ic, &dc));
+        CHECK_AND_UPDATE_SUCCESS(is_success, handle_row(labels_table, relocations_table, current_row, data_image, code_image, &ic, &dc));
     }
     add_ic_to_all_data_addresses(labels_table, ic);
 

@@ -35,7 +35,7 @@ void empty_word(Word *word) {
     }
 }
 
-void parse_symbol_to_word(int symbol_index, Word *word,AddressingMethod addressing_method) {
+void parse_symbol_to_word(int symbol_index, Word *word, AddressingMethod addressing_method) {
     code_number_into_word_bits(word, addressing_method, 0, 2);
     code_number_into_word_bits(word, symbol_index, 2, 10);
 }
@@ -88,7 +88,7 @@ Bool address_data_instruction(OperandRow *row, Word *data_image, int *dc) {
 Bool is_legal_string_row(OperandRow *row) {
     int i;
     char *string = row->parameters[0];
-    if(string[0] != STRING_BOUNDARY || string[strlen(string) - 1] != STRING_BOUNDARY){
+    if (string[0] != STRING_BOUNDARY || string[strlen(string) - 1] != STRING_BOUNDARY) {
         export_error(row->line_number, "string must be enclosed in double quotes", row->file_name);
         return FALSE;
     }
@@ -105,7 +105,7 @@ Bool address_string_instruction(OperandRow *row, Word *data_image, int *dc) {
     int i;
     char *string_token = row->parameters[0];
     /* TODO: valdiate original row is correctly formatted */
-    if(!is_legal_string_row(row)) return FALSE;
+    if (!is_legal_string_row(row)) return FALSE;
     trim_string_quotes(string_token);
     for (i = 0; i < strlen(string_token); i++) {
         parse_int_to_word(&(data_image[*dc]), (int) (string_token[i]), FALSE);
@@ -116,8 +116,7 @@ Bool address_string_instruction(OperandRow *row, Word *data_image, int *dc) {
     return TRUE;
 }
 
-Bool code_word_from_operand(OperandRow *row, Word *code_image, int *ic, char *raw_operand,
-                            AddressingType const addressing_type, OperandLocation const location) {
+Bool code_word_from_operand(OperandRow *row, Word *code_image, int *ic, char *raw_operand, AddressingType const addressing_type, OperandLocation const location) {
     Register reg;
     if (addressing_type == IMMEDIATE) {
         parse_int_to_word(code_image + *ic, parse_int(raw_operand), TRUE);
@@ -162,8 +161,7 @@ Bool address_code_instruction(OperandRow *row, Word *code_image, int *ic) {
     }
     op_mode = get_opcode_possible_modes(op_num);
     if (row->parameters_count != opcode_has_source(op_mode) + opcode_has_destination(op_mode)) {
-        export_error(row->line_number, join_strings(2, "invalid number of operands for instruction: ", row->operand),
-                     row->file_name);
+        export_error(row->line_number, join_strings(2, "invalid number of operands for instruction: ", row->operand), row->file_name);
         return FALSE;
     }
     if (!handle_instruction_operand(row, code_image, ic, &op_num, &op_mode, &raw_src_operand, &raw_dest_operand, &src_op, &dest_op)) return FALSE;
@@ -173,32 +171,28 @@ Bool address_code_instruction(OperandRow *row, Word *code_image, int *ic) {
     return TRUE;
 }
 
-/* TODO: fix indentation */
-Bool handle_parameter_operands(OperandRow *row, Word *code_image, int *ic, char *raw_src_operand, char *raw_dest_operand,
-                          AddressingType const src_op, AddressingType const dest_op) {
+Bool handle_parameter_operands(OperandRow *row, Word *code_image, int *ic, char *raw_src_operand, char *raw_dest_operand, AddressingType const src_op, AddressingType const dest_op) {
     Register src_register, dest_register;
     Bool is_success = TRUE;
     if (row->parameters_count == 1) {
         if ((src_op) == NO_VALUE) {
-            CHECK_AND_UPDATE_SUCCESS(is_success,code_word_from_operand(row, code_image, ic, raw_dest_operand, dest_op, DESTINATION));
+            CHECK_AND_UPDATE_SUCCESS(is_success, code_word_from_operand(row, code_image, ic, raw_dest_operand, dest_op, DESTINATION));
         } else {
-            CHECK_AND_UPDATE_SUCCESS(is_success,code_word_from_operand(row, code_image, ic, raw_src_operand, src_op, SOURCE));
+            CHECK_AND_UPDATE_SUCCESS(is_success, code_word_from_operand(row, code_image, ic, raw_src_operand, src_op, SOURCE));
         }
     } else {
-        CHECK_AND_UPDATE_SUCCESS(is_success,code_word_from_operand(row, code_image, ic, raw_src_operand, src_op, SOURCE));
+        CHECK_AND_UPDATE_SUCCESS(is_success, code_word_from_operand(row, code_image, ic, raw_src_operand, src_op, SOURCE));
         if (!((src_op) == REGISTER && dest_op == REGISTER)) {
-            CHECK_AND_UPDATE_SUCCESS(is_success,code_word_from_operand(row, code_image, ic, raw_dest_operand, dest_op, DESTINATION));
+            CHECK_AND_UPDATE_SUCCESS(is_success, code_word_from_operand(row, code_image, ic, raw_dest_operand, dest_op, DESTINATION));
         } else {
             src_register = get_register(raw_src_operand);
             dest_register = get_register(raw_dest_operand);
             if (src_register == INVALID_REGISTER || dest_register == INVALID_REGISTER) {
                 if (src_register == INVALID_REGISTER) {
-                    export_error(row->line_number, join_strings(2, "invalid register: ", raw_src_operand),
-                                 row->file_name);
+                    export_error(row->line_number, join_strings(2, "invalid register: ", raw_src_operand), row->file_name);
                 }
                 if (dest_register == INVALID_REGISTER) {
-                    export_error(row->line_number, join_strings(2, "invalid register: ", raw_dest_operand),
-                                 row->file_name);
+                    export_error(row->line_number, join_strings(2, "invalid register: ", raw_dest_operand), row->file_name);
                 }
                 return FALSE;
             }
@@ -218,9 +212,7 @@ Bool is_addressing_types_legal(OpcodeMode const opcode_mode, AddressingType cons
     return TRUE;
 }
 
-Bool handle_instruction_operand(const OperandRow *row, Word *code_image, int *ic, Opcode *op_num, OpcodeMode *op_mode,
-                                char **raw_src_operand, char **raw_dest_operand, AddressingType *src_op,
-                                AddressingType *dest_op) {
+Bool handle_instruction_operand(const OperandRow *row, Word *code_image, int *ic, Opcode *op_num, OpcodeMode *op_mode, char **raw_src_operand, char **raw_dest_operand, AddressingType *src_op, AddressingType *dest_op) {
     if (row->parameters_count == 2) {
         *raw_src_operand = row->parameters[0];
         *raw_dest_operand = row->parameters[1];
@@ -240,8 +232,7 @@ Bool handle_instruction_operand(const OperandRow *row, Word *code_image, int *ic
         *dest_op = NO_VALUE;
     }
     if (!is_addressing_types_legal((*op_mode), (*src_op), (*dest_op))) {
-        export_error(row->line_number, join_strings(2, "invalid operand type for instruction: ", row->operand),
-                     (char *) row->file_name);
+        export_error(row->line_number, join_strings(2, "invalid operand type for instruction: ", row->operand), (char *) row->file_name);
         return FALSE;
     }
     parse_operand_to_word(code_image + *ic, (*op_num), (*src_op), (*dest_op));
@@ -292,8 +283,7 @@ void code_number_into_word_bits(Word *word, int number, int offset, int length) 
     }
 }
 
-void build_opcode_mode(int src_is_immediate, int src_is_direct, int src_is_register, int dest_is_immediate,
-                       int dest_is_direct, int dest_is_register, OpcodeMode *opcode_mode) {
+void build_opcode_mode(int src_is_immediate, int src_is_direct, int src_is_register, int dest_is_immediate, int dest_is_direct, int dest_is_register, OpcodeMode *opcode_mode) {
     opcode_mode->src_op.is_register = src_is_register;
     opcode_mode->src_op.is_direct = src_is_direct;
     opcode_mode->src_op.is_immediate = src_is_immediate;

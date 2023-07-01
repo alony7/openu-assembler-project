@@ -28,7 +28,7 @@ static void execute_program(int argc, char *argv[]) {
     if(first_step_process(data_image,code_image,&label_symbol_table, &relocations_symbol_table,&file_operands,
                        "C:\\Users\\alons\\vm\\exercises\\mm14\\openu-assembler-project\\test-files\\work1.am")){
         printf("first step success\n");
-        second_step_process(data_image,code_image,&label_symbol_table, &relocations_symbol_table,file_operands,
+        second_step_process(code_image,&label_symbol_table, &relocations_symbol_table,file_operands,
                             "C:\\Users\\alons\\vm\\exercises\\mm14\\openu-assembler-project\\test-files\\work1.am");
         //pretty print the whole code image, with a line for every word
 //        for(i = 100; i < 118; i++){
