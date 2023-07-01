@@ -13,7 +13,7 @@ static Bool is_string_equal(const char *line, const char *directive) {
     return !strcmp(line, directive);
 }
 
-//TODO: refactor printf to error handling
+/*TODO: refactor printf to error handling*/
 static Bool fill_macro_table(FileOperands *file_operands, MacroTable *table) {
     int line_number = 0;
     char *raw_line;
