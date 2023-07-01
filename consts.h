@@ -4,7 +4,7 @@
 #define AM_FILE_EXTENSION ".am"
 
 /* TODO: update to 100 */
-#define MEMORY_OFFSET 0
+#define MEMORY_OFFSET 100
 #define MEMORY_SIZE 1024
 #define WORD_SIZE 12
 #define START_MACRO_DIRECTIVE "mcro"
@@ -12,7 +12,7 @@
 #define MAX_LINE_LENGTH 81
 #define MACRO_TABLE_CAPACITY 10
 #define INITIAL_SYMBOL_TABLE_CAPACITY 10
-#define BASE_ROW_BATCH_SIZE 10
+#define BASE_LINE_BATCH_SIZE 10
 #define READ_MODE "r"
 #define WRITE_MODE "w"
 #define MAX_FILENAME_LENGTH 256
@@ -41,3 +41,5 @@
 #define REGISTER_PREFIX '@'
 #define REGISTER_LETTER 'r'
 #define NULL_CHAR '\0'
+#define STRING_BOUNDARY '"'
+#define ASCII_MAX 0x7f

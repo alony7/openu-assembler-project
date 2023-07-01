@@ -50,10 +50,10 @@ Bool is_comment(char *instruction) {
     return instruction[0] == COMMENT_PREFIX;
 }
 
-Bool is_empty_row(char *row) {
+Bool is_empty_line(char *line) {
     int i;
-    for (i = 0; i < strlen(row); i++) {
-        if (row[i] != ' ' && row[i] != '\t' && row[i] != '\n' && row[i] != '\r') {
+    for (i = 0; i < strlen(line); i++) {
+        if (line[i] != ' ' && line[i] != '\t' && line[i] != '\n' && line[i] != '\r') {
             return FALSE;
         }
     }
@@ -137,7 +137,7 @@ Bool is_register(char *operand) {
 Bool is_label(char *instruction) {
     return instruction[strlen(instruction) - 1] == LABEL_TERMINATOR;
 }
-
+/* TODO: report error */
 int parse_int(char *str) {
     int num;
     sscanf(str, "%d", &num);
@@ -173,4 +173,47 @@ char *join_strings(int num_strings, ...) {
     va_end(args);
 
     return result;
+}
+
+void trim_string_quotes(char *str) {
+    int i;
+    for (i = 0; i < strlen(str); i++) {
+        str[i] = str[i + 1];
+    }
+    str[strlen(str) - 1] = '\0';
+}
+
+char base64_encode(int value) {
+    if (value < 26) {
+        return 'A' + value;
+    } else if (value < 52) {
+        return 'a' + (value - 26);
+    } else if (value < 62) {
+        return '0' + (value - 52);
+    } else if (value == 62) {
+        return '+';
+    } else {
+        return '/';
+    }
+}
+
+void word_to_base64(Word *word, char *base64){
+    int first6Bits = 0;
+    int second6Bits = 0;
+    int i;
+
+    // Extract the first 6 bits
+    for (i = 5; i >= 0 ; i--) {
+        first6Bits += (word->bits[i] << (i));
+    }
+
+    // Extract the second 6 bits
+    for (i = 11; i >= 6; i--) {
+        second6Bits += (word->bits[i ] << (i - 6 ));
+    }
+    // Convert the first 6 bits to a base 64 character
+    base64[0] = base64_encode(second6Bits);
+
+    // Convert the second 6 bits to a base 64 character
+    base64[1] = base64_encode(first6Bits);
 }

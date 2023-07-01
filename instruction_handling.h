@@ -42,7 +42,7 @@ typedef enum InstructionType {
     COMMAND,
     COMMENT,
     LABEL,
-    EMPTY_ROW,
+    EMPTY_LINE,
     UNKNOWN
 } InstructionType;
 
@@ -56,7 +56,7 @@ typedef enum AddressingType {
 typedef struct {
     char *name;
     char **value;
-    int row_number;
+    int line_number;
     int value_size;
 } MacroItem;
 
@@ -101,14 +101,17 @@ typedef enum Register {
 
 InstructionType get_instruction_type(char *instruction);
 
-Bool address_code_instruction(OperandRow *row, Word *code_image, int *ic);
+Bool address_code_instruction(ParsedLine *line, Word *code_image, int *ic);
 
-Bool address_string_instruction(OperandRow *row, Word *data_image, int *dc);
+Bool address_string_instruction(ParsedLine *line, Word *data_image, int *dc);
 
-Bool address_data_instruction(OperandRow *row, Word *data_image, int *dc);
+Bool address_data_instruction(ParsedLine *line, Word *data_image, int *dc);
 
 void code_number_into_word_bits(Word *word, int number, int offset, int length);
 
 OpcodeMode get_opcode_possible_modes(Opcode opcode);
 
-void advance_operand_row(OperandRow *row);
+void advance_line_operands(ParsedLine *line);
+
+void get_word_addressing_types(Word *word, AddressingType *src, AddressingType *dest);
+void parse_symbol_to_word(int symbol_index, Word *word,AddressingMethod addressing_method);

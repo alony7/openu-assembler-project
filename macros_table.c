@@ -2,20 +2,20 @@
 #include <string.h>
 #include "macros_table.h"
 
-MacroTable create_macro_table(){
-    MacroTable table;
-    table.capacity = 0;
-    table.size = 0;
-    table.items = NULL;
+MacroTable *create_macro_table(){
+    MacroTable *table = (MacroTable*) malloc(sizeof(MacroTable));
+    table->capacity = 0;
+    table->size = 0;
+    table->items = NULL;
     return table;
 }
 
-MacroItem *create_macro_item(char *name, char **value, int row_number,int value_size){
+MacroItem *create_macro_item(char *name, char **value, int line_number, int value_size){
     MacroItem *item = (MacroItem*) malloc(sizeof(MacroItem));
     item->name = malloc(strlen(name) + 1);
     strcpy(item->name, name);
     item->value = value;
-    item->row_number = row_number;
+    item->line_number = line_number;
     item->value_size = value_size;
     return item;
 }
@@ -69,6 +69,7 @@ void free_macro_table(MacroTable *table){
         free_macro_item(&table->items[i]);
     }
     free(table->items);
+    free(table);
 }
 
 Bool append_macro_item_value(MacroItem *item, char *value_to_append) {
