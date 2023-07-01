@@ -50,10 +50,10 @@ Bool is_comment(char *instruction) {
     return instruction[0] == COMMENT_PREFIX;
 }
 
-Bool is_empty_row(char *row) {
+Bool is_empty_line(char *line) {
     int i;
-    for (i = 0; i < strlen(row); i++) {
-        if (row[i] != ' ' && row[i] != '\t' && row[i] != '\n' && row[i] != '\r') {
+    for (i = 0; i < strlen(line); i++) {
+        if (line[i] != ' ' && line[i] != '\t' && line[i] != '\n' && line[i] != '\r') {
             return FALSE;
         }
     }

@@ -5,11 +5,12 @@
 #include "utils.h"
 #include "instruction_handling.h"
 
-SymbolTable create_symbol_table() {
-    SymbolTable table;
-    table.capacity = INITIAL_SYMBOL_TABLE_CAPACITY;
-    table.size = 0;
-    table.symbols = (Symbol *) malloc(sizeof(Symbol) * table.capacity);
+SymbolTable *create_symbol_table() {
+    SymbolTable *table;
+    table = (SymbolTable *) malloc(sizeof(SymbolTable));
+    table->capacity = INITIAL_SYMBOL_TABLE_CAPACITY;
+    table->size = 0;
+    table->symbols = (Symbol *) malloc(sizeof(Symbol) * table->capacity);
     return table;
 }
 
@@ -37,7 +38,6 @@ Bool add_symbol(SymbolTable *table, Symbol *symbol) {
 
 void free_symbol(Symbol *symbol) {
     free(symbol->name);
-    free(symbol);
 }
 
 void free_symbol_table(SymbolTable *table) {
@@ -46,6 +46,7 @@ void free_symbol_table(SymbolTable *table) {
         free_symbol(&table->symbols[i]);
     }
     free(table->symbols);
+    free(table);
 }
 
 Symbol *get_symbol(SymbolTable *table, char *name) {

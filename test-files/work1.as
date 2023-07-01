@@ -1,3 +1,4 @@
+; file ps.as
 .entry LENGTH
 .extern W
 .extern L3
@@ -6,8 +7,12 @@ LOOP: jmp L1
 prn -5
 bfne W
 sub @r1, @r4
+mcro acab
 bne L3
-bne L3
+endmcro
+acab
+
+acab
 L1: inc K
 .entry LOOP
 jmp W

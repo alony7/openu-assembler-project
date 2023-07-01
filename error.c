@@ -12,8 +12,8 @@
     }
 }
 
-void throw_system_error(char *error_message,char *file_name,Bool should_free_smg) {
-    fprintf(stderr,"Error processing file '%s': %s\n", file_name, error_message);
+void throw_system_error(char *error_message,Bool should_free_smg) {
+    fprintf(stderr,"%s\n",  error_message);
     if(should_free_smg){
         free(error_message);
     }

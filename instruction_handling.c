@@ -6,13 +6,13 @@
 #include "utils.h"
 
 
-Bool handle_instruction_operand(const OperandRow *row, Word *code_image, int *ic, Opcode *op_num, OpcodeMode *op_mode,
+Bool handle_instruction_operand(const ParsedLine *line, Word *code_image, int *ic, Opcode *op_num, OpcodeMode *op_mode,
                                 char **raw_src_operand, char **raw_dest_operand, AddressingType *src_op,
                                 AddressingType *dest_op);
 
 
 Bool
-handle_parameter_operands(OperandRow *row, Word *code_image, int *ic, char *raw_src_operand, char *raw_dest_operand,
+handle_parameter_operands(ParsedLine *line, Word *code_image, int *ic, char *raw_src_operand, char *raw_dest_operand,
                           AddressingType src_op, AddressingType dest_op);
 
 void parse_registers_to_word(Word *word, Register src_register, Register dest_register);
@@ -23,7 +23,7 @@ AddressingType get_addressing_type(char *operand);
 
 void parse_int_to_word(Word *word, int num, Bool add_ARE);
 
-Bool code_word_from_operand(OperandRow *row, Word *code_image, int *ic, char *raw_operand,
+Bool code_word_from_operand(ParsedLine *line, Word *code_image, int *ic, char *raw_operand,
                             AddressingType addressing_type, OperandLocation location);
 
 void set_word_to_zero(Word *word);
@@ -75,37 +75,37 @@ void parse_int_to_word(Word *word, int num, Bool add_ARE) {
     }
 }
 
-Bool address_data_instruction(OperandRow *row, Word *data_image, int *dc) {
-    /* TODO: valdiate original row is correctly formatted */
+Bool address_data_instruction(ParsedLine *line, Word *data_image, int *dc) {
+    /* TODO: valdiate original line is correctly formatted */
     int i;
-    for (i = 0; i < row->parameters_count; i++) {
-        parse_int_to_word(&(data_image[*dc]), parse_int(row->parameters[i]), FALSE);
+    for (i = 0; i < line->parameters_count; i++) {
+        parse_int_to_word(&(data_image[*dc]), parse_int(line->parameters[i]), FALSE);
         (*dc)++;
     }
     return TRUE;
 }
 
-Bool is_legal_string_row(OperandRow *row) {
+Bool is_legal_string_operand(ParsedLine *line) {
     int i;
-    char *string = row->parameters[0];
+    char *string = line->parameters[0];
     if (string[0] != STRING_BOUNDARY || string[strlen(string) - 1] != STRING_BOUNDARY) {
-        throw_program_error(row->line_number, "string must be enclosed in double quotes", row->file_name, FALSE);
+        throw_program_error(line->line_number, "string must be enclosed in double quotes", line->file_name, FALSE);
         return FALSE;
     }
     for (i = 0; i < strlen(string); i++) {
         if ((string[i] & ~ASCII_MAX) != 0) {
-            throw_program_error(row->line_number, "string contains non-ascii characters", row->file_name, FALSE);
+            throw_program_error(line->line_number, "string contains non-ascii characters", line->file_name, FALSE);
             return FALSE;
         }
     }
     return TRUE;
 }
 
-Bool address_string_instruction(OperandRow *row, Word *data_image, int *dc) {
+Bool address_string_instruction(ParsedLine *line, Word *data_image, int *dc) {
     int i;
-    char *string_token = row->parameters[0];
-    /* TODO: valdiate original row is correctly formatted */
-    if (!is_legal_string_row(row)) return FALSE;
+    char *string_token = line->parameters[0];
+    /* TODO: valdiate original line is correctly formatted */
+    if (!is_legal_string_operand(line)) return FALSE;
     trim_string_quotes(string_token);
     for (i = 0; i < strlen(string_token); i++) {
         parse_int_to_word(&(data_image[*dc]), (int) (string_token[i]), FALSE);
@@ -116,7 +116,7 @@ Bool address_string_instruction(OperandRow *row, Word *data_image, int *dc) {
     return TRUE;
 }
 
-Bool code_word_from_operand(OperandRow *row, Word *code_image, int *ic, char *raw_operand, AddressingType const addressing_type, OperandLocation const location) {
+Bool code_word_from_operand(ParsedLine *line, Word *code_image, int *ic, char *raw_operand, AddressingType const addressing_type, OperandLocation const location) {
     Register reg;
     if (addressing_type == IMMEDIATE) {
         parse_int_to_word(code_image + *ic, parse_int(raw_operand), TRUE);
@@ -127,7 +127,7 @@ Bool code_word_from_operand(OperandRow *row, Word *code_image, int *ic, char *ra
     } else {
         reg = get_register(raw_operand);
         if (reg == INVALID_REGISTER) {
-            throw_program_error(row->line_number, join_strings(2, "invalid register: ", raw_operand), row->file_name, TRUE);
+            throw_program_error(line->line_number, join_strings(2, "invalid register: ", raw_operand), line->file_name, TRUE);
             return FALSE;
         }
         if (location == DESTINATION) {
@@ -148,51 +148,51 @@ Bool opcode_has_destination(OpcodeMode opcode_mode) {
     return opcode_mode.dest_op.is_direct || opcode_mode.dest_op.is_immediate || opcode_mode.dest_op.is_register;
 }
 
-Bool address_code_instruction(OperandRow *row, Word *code_image, int *ic) {
-    /* TODO:  valdiate original row is correctly formatted */
+Bool address_code_instruction(ParsedLine *line, Word *code_image, int *ic) {
+    /* TODO:  valdiate original line is correctly formatted */
     char *raw_src_operand = NULL, *raw_dest_operand = NULL;
     AddressingType src_op = {0}, dest_op = {0};
     OpcodeMode op_mode = {0};
 
-    Opcode op_num = get_opcode(row->operand);
+    Opcode op_num = get_opcode(line->operand);
     if (op_num == INVALID_OPCODE) {
-        throw_program_error(row->line_number, join_strings(2, "invalid instruction: ", row->operand), row->file_name, TRUE);
+        throw_program_error(line->line_number, join_strings(2, "invalid instruction: ", line->operand), line->file_name, TRUE);
         return FALSE;
     }
     op_mode = get_opcode_possible_modes(op_num);
-    if (row->parameters_count != opcode_has_source(op_mode) + opcode_has_destination(op_mode)) {
-        throw_program_error(row->line_number, join_strings(2, "invalid number of operands for instruction: ", row->operand), row->file_name, TRUE);
+    if (line->parameters_count != opcode_has_source(op_mode) + opcode_has_destination(op_mode)) {
+        throw_program_error(line->line_number, join_strings(2, "invalid number of operands for instruction: ", line->operand), line->file_name, TRUE);
         return FALSE;
     }
-    if (!handle_instruction_operand(row, code_image, ic, &op_num, &op_mode, &raw_src_operand, &raw_dest_operand, &src_op, &dest_op)) return FALSE;
-    if (row->parameters_count == 0) return TRUE;
-    if (!handle_parameter_operands(row, code_image, ic, raw_src_operand, raw_dest_operand, src_op, dest_op)) return FALSE;
+    if (!handle_instruction_operand(line, code_image, ic, &op_num, &op_mode, &raw_src_operand, &raw_dest_operand, &src_op, &dest_op)) return FALSE;
+    if (line->parameters_count == 0) return TRUE;
+    if (!handle_parameter_operands(line, code_image, ic, raw_src_operand, raw_dest_operand, src_op, dest_op)) return FALSE;
 
     return TRUE;
 }
 
-Bool handle_parameter_operands(OperandRow *row, Word *code_image, int *ic, char *raw_src_operand, char *raw_dest_operand, AddressingType const src_op, AddressingType const dest_op) {
+Bool handle_parameter_operands(ParsedLine *line, Word *code_image, int *ic, char *raw_src_operand, char *raw_dest_operand, AddressingType const src_op, AddressingType const dest_op) {
     Register src_register, dest_register;
     Bool is_success = TRUE;
-    if (row->parameters_count == 1) {
+    if (line->parameters_count == 1) {
         if ((src_op) == NO_VALUE) {
-            CHECK_AND_UPDATE_SUCCESS(is_success, code_word_from_operand(row, code_image, ic, raw_dest_operand, dest_op, DESTINATION));
+            CHECK_AND_UPDATE_SUCCESS(is_success, code_word_from_operand(line, code_image, ic, raw_dest_operand, dest_op, DESTINATION));
         } else {
-            CHECK_AND_UPDATE_SUCCESS(is_success, code_word_from_operand(row, code_image, ic, raw_src_operand, src_op, SOURCE));
+            CHECK_AND_UPDATE_SUCCESS(is_success, code_word_from_operand(line, code_image, ic, raw_src_operand, src_op, SOURCE));
         }
     } else {
-        if (CHECK_AND_UPDATE_SUCCESS(is_success, code_word_from_operand(row, code_image, ic, raw_src_operand, src_op, SOURCE))) {
+        if (CHECK_AND_UPDATE_SUCCESS(is_success, code_word_from_operand(line, code_image, ic, raw_src_operand, src_op, SOURCE))) {
             if (!((src_op) == REGISTER && dest_op == REGISTER)) {
-                CHECK_AND_UPDATE_SUCCESS(is_success, code_word_from_operand(row, code_image, ic, raw_dest_operand, dest_op, DESTINATION));
+                CHECK_AND_UPDATE_SUCCESS(is_success, code_word_from_operand(line, code_image, ic, raw_dest_operand, dest_op, DESTINATION));
             } else {
                 src_register = get_register(raw_src_operand);
                 dest_register = get_register(raw_dest_operand);
                 if (src_register == INVALID_REGISTER || dest_register == INVALID_REGISTER) {
                     if (src_register == INVALID_REGISTER) {
-                        throw_program_error(row->line_number, join_strings(2, "invalid register: ", raw_src_operand), row->file_name, TRUE);
+                        throw_program_error(line->line_number, join_strings(2, "invalid register: ", raw_src_operand), line->file_name, TRUE);
                     }
                     if (dest_register == INVALID_REGISTER) {
-                        throw_program_error(row->line_number, join_strings(2, "invalid register: ", raw_dest_operand), row->file_name, TRUE);
+                        throw_program_error(line->line_number, join_strings(2, "invalid register: ", raw_dest_operand), line->file_name, TRUE);
                     }
                     return FALSE;
                 }
@@ -213,19 +213,19 @@ Bool is_addressing_types_legal(OpcodeMode const opcode_mode, AddressingType cons
     return TRUE;
 }
 
-Bool handle_instruction_operand(const OperandRow *row, Word *code_image, int *ic, Opcode *op_num, OpcodeMode *op_mode, char **raw_src_operand, char **raw_dest_operand, AddressingType *src_op, AddressingType *dest_op) {
-    if (row->parameters_count == 2) {
-        *raw_src_operand = row->parameters[0];
-        *raw_dest_operand = row->parameters[1];
+Bool handle_instruction_operand(const ParsedLine *line, Word *code_image, int *ic, Opcode *op_num, OpcodeMode *op_mode, char **raw_src_operand, char **raw_dest_operand, AddressingType *src_op, AddressingType *dest_op) {
+    if (line->parameters_count == 2) {
+        *raw_src_operand = line->parameters[0];
+        *raw_dest_operand = line->parameters[1];
         *src_op = get_addressing_type((*raw_src_operand));
         *dest_op = get_addressing_type((*raw_dest_operand));
 
     } else if (opcode_has_destination((*op_mode))) {
-        *raw_dest_operand = row->parameters[0];
+        *raw_dest_operand = line->parameters[0];
         *src_op = NO_VALUE;
         *dest_op = get_addressing_type((*raw_dest_operand));
     } else if (opcode_has_source((*op_mode))) {
-        *raw_src_operand = row->parameters[0];
+        *raw_src_operand = line->parameters[0];
         *src_op = get_addressing_type((*raw_src_operand));
         *dest_op = NO_VALUE;
     } else {
@@ -233,7 +233,7 @@ Bool handle_instruction_operand(const OperandRow *row, Word *code_image, int *ic
         *dest_op = NO_VALUE;
     }
     if (!is_addressing_types_legal((*op_mode), (*src_op), (*dest_op))) {
-        throw_program_error(row->line_number, join_strings(2, "invalid operand type for instruction: ", row->operand), (char *) row->file_name, TRUE);
+        throw_program_error(line->line_number, join_strings(2, "invalid operand type for instruction: ", line->operand), (char *) line->file_name, TRUE);
         return FALSE;
     }
     parse_operand_to_word(code_image + *ic, (*op_num), (*src_op), (*dest_op));
@@ -241,19 +241,19 @@ Bool handle_instruction_operand(const OperandRow *row, Word *code_image, int *ic
     return TRUE;
 }
 
-void advance_operand_row(OperandRow *row) {
+void advance_line_operands(ParsedLine *line) {
     int i = 0;
-    row->operand = row->parameters[0];
-    for (i = 0; i < row->parameters_count - 1; i++) {
-        row->parameters[i] = row->parameters[i + 1];
+    line->operand = line->parameters[0];
+    for (i = 0; i < line->parameters_count - 1; i++) {
+        line->parameters[i] = line->parameters[i + 1];
     }
-    row->parameters_count--;
-    row->parameters[i] = NULL;
+    line->parameters_count--;
+    line->parameters[i] = NULL;
 }
 
 InstructionType get_instruction_type(char *instruction) {
-    if (is_empty_row(instruction)) {
-        return EMPTY_ROW;
+    if (is_empty_line(instruction)) {
+        return EMPTY_LINE;
     } else if (is_comment(instruction)) {
         return COMMENT;
     } else if (is_label(instruction)) {

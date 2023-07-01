@@ -15,8 +15,9 @@ static void execute_program(int argc, char *argv[]) {
     FileOperands *file_operands = NULL;
     int i;
     int num_of_files = argc - 1;
-    SymbolTable label_symbol_table = create_symbol_table();
-    SymbolTable relocations_symbol_table = create_symbol_table();
+    SymbolTable *label_symbol_table = NULL;
+    SymbolTable *relocations_symbol_table = NULL;
+
 
     /*TODO: extract to function*/
 
@@ -25,21 +26,27 @@ static void execute_program(int argc, char *argv[]) {
         exit(1);
     }
 
-    for(i=0;i<num_of_files;i++){
+    for(i=1;i<=num_of_files;i++){
         build_output_filename(argv[i], AS_FILE_EXTENSION, filename_with_as_extension);
         build_output_filename(argv[i], AM_FILE_EXTENSION, filename_with_am_extension);
         printf("Opening File: %s\n", filename_with_as_extension);
 
         if (!expand_file_macros(filename_with_as_extension, filename_with_am_extension)) {
-            throw_system_error("failed to expand file macros. skipping file...\n", filename_with_as_extension,FALSE);
+            throw_system_error(join_strings(3,"encountered errors while expanding macros. skipping file: '", filename_with_as_extension,"' ..."),TRUE);
             continue;
         }
-        if(!first_step_process(data_image,code_image,&label_symbol_table, &relocations_symbol_table,&file_operands,filename_with_am_extension)) {
-            throw_system_error("failed processing file. skipping file...\n", filename_with_as_extension,FALSE);
+        label_symbol_table = create_symbol_table();
+        relocations_symbol_table = create_symbol_table();
+        if(!first_step_process(data_image,code_image,label_symbol_table, relocations_symbol_table,&file_operands,filename_with_am_extension)) {
+            throw_system_error(join_strings(3,"encountered errors while processing code. skipping file: '", filename_with_am_extension,"' ..."),TRUE);
+            free_symbol_table(label_symbol_table);
+            free_symbol_table(relocations_symbol_table);
             continue;
         }
-        if(!second_step_process(code_image,&label_symbol_table, &relocations_symbol_table,file_operands,filename_with_am_extension)) {
-            throw_system_error("failed processing file. skipping file...\n", filename_with_as_extension,FALSE);
+        if(!second_step_process(code_image,label_symbol_table, relocations_symbol_table,file_operands,filename_with_am_extension)) {
+            throw_system_error(join_strings(3,"encountered errors while processing code. skipping file: '", filename_with_am_extension,"' ..."),TRUE);
+            free_symbol_table(label_symbol_table);
+            free_symbol_table(relocations_symbol_table);
             continue;
         }
         printf("File %s processed successfully\n", filename_with_as_extension);

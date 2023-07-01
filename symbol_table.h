@@ -17,7 +17,7 @@ typedef struct SymbolTable {
     int capacity;
 } SymbolTable;
 
-SymbolTable create_symbol_table();
+SymbolTable *create_symbol_table();
 
 Bool add_symbol(SymbolTable *table, Symbol *symbol);
 
