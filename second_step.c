@@ -1,8 +1,11 @@
 #include "util_types.h"
 #include "symbol_table.h"
 
+static Bool rewrite_dynamic_words(AddressingType operand_type, int *ic, Word *code_image, SymbolTable *labels_table, SymbolTable *relocations_table, SymbolTable *externals_table, ParsedLine *line, int parameter_index);
 
-static Bool rewrite_dynamic_words(AddressingType operand_type, int *ic, Word *code_image, SymbolTable *labels_table, SymbolTable *relocations_table, SymbolTable *externals_table, ParsedLine *line, int parameter_index) {
+static Bool process_line(ParsedLine *line, int *ic, Word *code_image, SymbolTable *labels_table, SymbolTable *relocations_table,SymbolTable *externals_table);
+
+Bool rewrite_dynamic_words(AddressingType operand_type, int *ic, Word *code_image, SymbolTable *labels_table, SymbolTable *relocations_table, SymbolTable *externals_table, ParsedLine *line, int parameter_index) {
     Bool is_external = FALSE;
     Symbol *label_symbol = NULL;
     Symbol *relocation_symbol = NULL;
@@ -33,7 +36,7 @@ static Bool rewrite_dynamic_words(AddressingType operand_type, int *ic, Word *co
     return TRUE;
 }
 
-static Bool process_line(ParsedLine *line, int *ic, Word *code_image, SymbolTable *labels_table, SymbolTable *relocations_table,SymbolTable *externals_table) {
+Bool process_line(ParsedLine *line, int *ic, Word *code_image, SymbolTable *labels_table, SymbolTable *relocations_table,SymbolTable *externals_table) {
     Bool is_success = TRUE;
     Word *current_word = NULL;
     AddressingType src_operand_type = NO_VALUE;

@@ -2,6 +2,9 @@
 #include <string.h>
 #include "macros_table.h"
 
+
+static void free_macro_item(MacroItem *item);
+
 MacroTable *create_macro_table(){
     MacroTable *table = (MacroTable*) malloc(sizeof(MacroTable));
     table->capacity = 0;
@@ -38,18 +41,6 @@ void free_macro_item(MacroItem *item){
     free(item->value);
 }
 
-MacroItem *remove_macro(MacroTable *table, char *macro_name){
-    int i;
-    MacroItem *item;
-    for(i=0;i<table->size;i++){
-        item = &table->items[i];
-        if(strcmp(item->name, macro_name) == 0){
-            free_macro_item(item);
-            return item;
-        }
-    }
-    return NULL;
-}
 
 MacroItem *get_macro_item(MacroTable *table, char *name){
     int i;

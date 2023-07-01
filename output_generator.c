@@ -1,12 +1,12 @@
 #include "output_generator.h"
 
-void export_words_to_file(Word *words, int num_of_words, FILE *file);
+static void export_words_to_file(Word *words, int num_of_words, FILE *file);
 
-void generate_object_file(Word *code_image, Word *data_image, FILE *object_file, int num_of_command_words, int num_of_data_words);
+static void generate_object_file(Word *code_image, Word *data_image, FILE *object_file, int num_of_command_words, int num_of_data_words);
 
-void generate_entries_file(const SymbolTable *relocation_table, SymbolTable *symbol_table, FILE *entry_file);
+static void generate_entries_file(const SymbolTable *relocation_table, SymbolTable *symbol_table, FILE *entry_file);
 
-void generate_externals_file(const SymbolTable *externals_table, FILE *extern_file);
+static void generate_externals_file(const SymbolTable *externals_table, FILE *extern_file);
 
 Bool generate_output_files(char *object_filename, char *entry_filename, char *extern_filename, SymbolTable *relocation_table, SymbolTable *symbol_table, SymbolTable *externals_table, Word *code_image, Word *data_image, int dc, int ic) {
     FILE *object_file, *entry_file, *extern_file;

@@ -5,7 +5,9 @@
 #include "instruction_handling.h"
 #include "error.h"
 
-char *string_array_to_string(char **array, int size) {
+char base64_encode(int value);
+
+        char *string_array_to_string(char **array, int size) {
     int i;
     char *string = malloc(sizeof(char));
     string[0] = NULL_CHAR;
@@ -14,6 +16,14 @@ char *string_array_to_string(char **array, int size) {
         strcat(string, array[i]);
     }
     return string;
+}
+
+Bool is_string_equals(const char *line, const char *directive) {
+    if (line == NULL || directive == NULL) {
+        return FALSE;
+    }
+
+    return !strcmp(line, directive);
 }
 
 char *duplicate_string(const char *str) {

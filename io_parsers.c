@@ -4,7 +4,11 @@
 #include <malloc.h>
 #include "consts.h"
 
+static void parse_line(char *line, ParsedLine *parsed_line);
 
+static void free_parsed_line(ParsedLine *line);
+
+static FileOperands *create_file_operands();
 FILE *create_file_stream(char *file_name, char *mode) {
     FILE *file = fopen(file_name, mode);
     if (file == NULL) {
@@ -46,7 +50,7 @@ void parse_line(char *line, ParsedLine *parsed_line) {
     parsed_line->parameters_count = parameters_count;
 }
 
-static FileOperands *create_file_operands(){
+FileOperands *create_file_operands(){
     FileOperands *file_operands = malloc(sizeof(FileOperands));
     file_operands->size = 0;
     file_operands->lines = NULL;

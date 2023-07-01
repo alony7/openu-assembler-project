@@ -1,17 +1,21 @@
 #pragma once
+
 #include "io_parsers.h"
 #include "instruction_handling.h"
 #include "util_types.h"
-#define CHECK_AND_UPDATE_SUCCESS(is_success,instruction) (is_success = (instruction) && is_success)
+
+#define CHECK_AND_UPDATE_SUCCESS(is_success, instruction) (is_success = (instruction) && is_success)
 
 
 char *string_array_to_string(char **array, int size);
 
-char* duplicate_string(const char* str);
+char *duplicate_string(const char *str);
 
 Bool is_integer(char *str);
 
 Bool is_comment(char *operand);
+
+Bool is_string_equals(const char *line, const char *directive);
 
 Bool is_empty_line(char *line);
 

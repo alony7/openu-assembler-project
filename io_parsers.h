@@ -21,14 +21,9 @@ typedef struct FileOperands {
 
 FILE *create_file_stream(char *file_name, char *mode);
 
-void parse_line(char *line, ParsedLine *parsed_line);
-
 FileOperands *parse_lines_from_file(FILE *file, char *file_name);
-
-void free_parsed_line(ParsedLine *line);
 
 void free_file_operands(FileOperands *file_operands);
 
 void build_output_filename(char *base_name, char *suffix, char *output_buffer);
 
-FILE *open_file(char *file_name, char *mode);

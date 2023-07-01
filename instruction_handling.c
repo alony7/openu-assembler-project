@@ -5,27 +5,35 @@
 #include "instruction_handling.h"
 #include "utils.h"
 
+static Bool opcode_has_destination(OpcodeMode opcode_mode);
 
-Bool handle_instruction_operand(const ParsedLine *line, Word *code_image, int *ic, Opcode *op_num, OpcodeMode *op_mode, char **raw_src_operand, char **raw_dest_operand, AddressingType *src_op, AddressingType *dest_op);
+static Bool opcode_has_source(OpcodeMode opcode_mode);
 
+static Bool is_addressing_types_legal(OpcodeMode const opcode_mode, AddressingType const src_op, AddressingType const dest_op);
 
-Bool handle_parameter_operands(ParsedLine *line, Word *code_image, int *ic, char *raw_src_operand, char *raw_dest_operand, AddressingType src_op, AddressingType dest_op);
+static void build_opcode_mode(int src_is_immediate, int src_is_direct, int src_is_register, int dest_is_immediate, int dest_is_direct, int dest_is_register, OpcodeMode *opcode_mode);
 
-void parse_registers_to_word(Word *word, Register src_register, Register dest_register);
+static Bool handle_instruction_operand(const ParsedLine *line, Word *code_image, int *ic, Opcode *op_num, OpcodeMode *op_mode, char **raw_src_operand, char **raw_dest_operand, AddressingType *src_op, AddressingType *dest_op);
 
-void parse_operand_to_word(Word *word, Opcode opcode, AddressingType src_op, AddressingType dest_op);
+static Bool handle_parameter_operands(ParsedLine *line, Word *code_image, int *ic, char *raw_src_operand, char *raw_dest_operand, AddressingType src_op, AddressingType dest_op);
 
-AddressingType get_addressing_type(char *operand);
+static void parse_registers_to_word(Word *word, Register src_register, Register dest_register);
 
-void parse_int_to_word(Word *word, int num, Bool add_ARE);
+static void parse_operand_to_word(Word *word, Opcode opcode, AddressingType src_op, AddressingType dest_op);
 
-Bool code_word_from_operand(ParsedLine *line, Word *code_image, int *ic, char *raw_operand, AddressingType addressing_type, OperandContext context);
+static AddressingType get_addressing_type(char *operand);
 
-void set_word_to_zero(Word *word);
+static void parse_int_to_word(Word *word, int num, Bool add_ARE);
+
+static Bool code_word_from_operand(ParsedLine *line, Word *code_image, int *ic, char *raw_operand, AddressingType addressing_type, OperandContext context);
+
+static void set_word_to_zero(Word *word);
 
 static void code_number_into_word_bits(Word *word, int number, int offset, int length);
 
 static OpcodeMode get_opcode_possible_modes(Opcode opcode);
+
+static Bool is_legal_string_operand(ParsedLine *line);
 
 void set_word_to_zero(Word *word) {
     int i;
@@ -273,7 +281,7 @@ InstructionType get_instruction_type(char *instruction) {
     }
 }
 
-static void code_number_into_word_bits(Word *word, int number, int offset, int length) {
+void code_number_into_word_bits(Word *word, int number, int offset, int length) {
     int i = 0;
     number = number & ((1 << length) - 1);
     if (number < 0) {
@@ -293,7 +301,7 @@ void build_opcode_mode(int src_is_immediate, int src_is_direct, int src_is_regis
     opcode_mode->dest_op.is_immediate = dest_is_immediate;
 }
 
-static OpcodeMode get_opcode_possible_modes(Opcode opcode) {
+OpcodeMode get_opcode_possible_modes(Opcode opcode) {
     OpcodeMode opcode_mode = {0};
     ParameterMode src_mode = {0};
     ParameterMode dest_mode = {0};

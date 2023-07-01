@@ -5,16 +5,12 @@
 #include "io_parsers.h"
 
 
-static Bool is_string_equal(const char *line, const char *directive) {
-    if (line == NULL || directive == NULL) {
-        return FALSE;
-    }
+static Bool fill_macro_table(FileOperands *file_operands, MacroTable *table);
 
-    return !strcmp(line, directive);
-}
+static Bool rewrite_macros(FileOperands *file_operands, MacroTable *table, FILE *output_file);
 
 /*TODO: refactor printf to error handling*/
-static Bool fill_macro_table(FileOperands *file_operands, MacroTable *table) {
+Bool fill_macro_table(FileOperands *file_operands, MacroTable *table) {
     int line_number = 0;
     char *raw_line;
     ParsedLine parsed_line;
@@ -27,7 +23,7 @@ static Bool fill_macro_table(FileOperands *file_operands, MacroTable *table) {
         if (is_comment(raw_line) && !is_macro) {
             continue;
         }
-        if (is_string_equal(parsed_line.operand, END_MACRO_DIRECTIVE)) {
+        if (is_string_equals(parsed_line.operand, END_MACRO_DIRECTIVE)) {
             if (!is_macro) {
                 printf("Error: invalid end of macro in line %d\n", line_number);
                 return FALSE;
@@ -39,7 +35,7 @@ static Bool fill_macro_table(FileOperands *file_operands, MacroTable *table) {
             is_macro = FALSE;
             add_macro_item(table, item);
             continue;
-        } else if (is_string_equal(parsed_line.operand, START_MACRO_DIRECTIVE)) {
+        } else if (is_string_equals(parsed_line.operand, START_MACRO_DIRECTIVE)) {
             /*TODO: validate if macro name is caught by command*/
             if (parsed_line.parameters_count != 1) {
                 printf("Error: invalid number of parameters for '%s' in line %d\n", START_MACRO_DIRECTIVE, line_number);
@@ -67,7 +63,7 @@ static Bool fill_macro_table(FileOperands *file_operands, MacroTable *table) {
 }
 
 /*TODO: Check if i need to delete empty lines and comments*/
-static Bool rewrite_macros(FileOperands *file_operands, MacroTable *table, FILE *output_file) {
+Bool rewrite_macros(FileOperands *file_operands, MacroTable *table, FILE *output_file) {
     int line_number = 0;
     Bool is_macro = FALSE;
     char *line_output = {0};
@@ -80,9 +76,9 @@ static Bool rewrite_macros(FileOperands *file_operands, MacroTable *table, FILE 
         /* comment line */
         if (is_comment(raw_line) || is_empty_line(raw_line)) {
             continue;
-        } else if (is_string_equal(parsed_line.operand, START_MACRO_DIRECTIVE)) {
+        } else if (is_string_equals(parsed_line.operand, START_MACRO_DIRECTIVE)) {
             is_macro = TRUE;
-        } else if (is_string_equal(parsed_line.operand, END_MACRO_DIRECTIVE)) {
+        } else if (is_string_equals(parsed_line.operand, END_MACRO_DIRECTIVE)) {
             is_macro = FALSE;
         }
         else {
