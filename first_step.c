@@ -61,6 +61,7 @@ Bool parse_label(ParsedLine *line, SymbolTable *labels_table, SymbolTable *reloc
 
 static Bool handle_line(SymbolTable *labels_table, SymbolTable *relocations_table, ParsedLine *line, Word *data_image, Word *code_image, int *ic, int *dc) {
     Symbol *symbol;
+    char *validation_error[MAX_ERROR_LENGTH];
     Bool is_success = TRUE;
     InstructionType instruction_type;
     if (line->main_operand == NULL) {
@@ -110,6 +111,10 @@ static Bool handle_line(SymbolTable *labels_table, SymbolTable *relocations_tabl
         default:
             throw_program_error(line->line_number, join_strings(2, "invalid instruction: ", line->main_operand), line->file_name, TRUE);
             return FALSE;
+    }
+    if(!is_valid_commas(line->original_line, (char *) validation_error)) {
+        throw_program_error(line->line_number, (char *) validation_error, line->file_name, FALSE);
+        return FALSE;
     }
     return is_success;
 }

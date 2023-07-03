@@ -51,3 +51,4 @@
 #define EXIT_FAILURE 1
 #define LINUX_CRLF 13
 #define WINDOWS_CRLF 10
+#define MAX_ERROR_LENGTH 100
