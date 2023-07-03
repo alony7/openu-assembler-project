@@ -1,13 +1,12 @@
 #pragma once
 
-#include "io_parsers.h"
 #include "instruction_handling.h"
 #include "util_types.h"
 
 #define CHECK_AND_UPDATE_SUCCESS(is_success, instruction) (is_success = (instruction) && is_success)
+#define CLEAN_STRING(str) do { clean_crlf(str); add_null_char(str); } while(0)
 
-
-char *string_array_to_string(char **array, int size);
+char *join_string_array(char **array, int size);
 
 char *duplicate_string(const char *str);
 
@@ -34,3 +33,7 @@ char *join_strings(int num_strings, ...);
 void trim_string_quotes(char *str);
 
 void word_to_base64(Word *word, char *base64);
+
+void clean_crlf(char *str);
+
+void add_null_char(char *str);

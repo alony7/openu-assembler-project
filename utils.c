@@ -7,7 +7,8 @@
 
 char base64_encode(int value);
 
-char *string_array_to_string(char **array, int size) {
+/* TODO: make this work with existing join string */
+char *join_string_array(char **array, int size) {
     int i;
     char *string = (char *) safe_malloc(sizeof(char));
     string[0] = NULL_CHAR;
@@ -33,10 +34,6 @@ char *duplicate_string(const char *str) {
     }
 
     duplicate = (char *) safe_malloc(strlen(str) + 1);
-
-    if (duplicate == NULL) {
-        return NULL;
-    }
 
     strcpy(duplicate, str);
     return duplicate;
@@ -170,10 +167,6 @@ char *join_strings(int num_strings, ...) {
     va_end(args);
 
     result = (char *) safe_malloc((total_length + 1) * sizeof(char));
-    if (result == NULL) {
-        fprintf(stderr, "Memory allocation failed\n");
-        return NULL;
-    }
 
     va_start(args, num_strings);
     result[0] = '\0';
@@ -226,4 +219,23 @@ void word_to_base64(Word *word, char *base64) {
     base64[1] = base64_encode(first6Bits);
 
     base64[2] = NULL_CHAR;
+}
+
+void clean_crlf(char *str) {
+    int i;
+    if(str == NULL){
+        return;
+    }
+    for (i = 0; i < strlen(str); i++) {
+        if (str[i] == '\n' || str[i] == WINDOWS_CRLF || str[i] == LINUX_CRLF) {
+            str[i] = '\0';
+        }
+    }
+}
+
+void add_null_char(char *str) {
+    if(str == NULL){
+        return;
+    }
+    str[strlen(str)] = '\0';
 }

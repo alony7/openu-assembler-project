@@ -1,5 +1,6 @@
 #include <stdio.h>
 #include <string.h>
+#include <malloc.h>
 #include "consts.h"
 #include "macros_table.h"
 #include "io_parsers.h"
@@ -66,19 +67,24 @@ Bool fill_macro_table(FileOperands *file_operands, MacroTable *table) {
 Bool rewrite_macros(FileOperands *file_operands, MacroTable *table, FILE *output_file) {
     int line_number = 0;
     Bool is_macro = FALSE;
-    char *line_output = {0};
-    char *raw_line = {0};
+    Bool should_free_line_output = FALSE;
+    char *line_output = NULL;
+    char *raw_line = NULL;
     ParsedLine parsed_line;
     MacroItem *current_item = NULL;
     for (line_number = 0; line_number < file_operands->size; line_number++) {
         parsed_line = file_operands->lines[line_number];
+        /* TODO: this is shit */
         raw_line = line_output = parsed_line.original_line;
         /* comment line */
         if (is_comment(raw_line) || is_empty_line(raw_line)) continue;
         else if (is_string_equals(parsed_line.main_operand, START_MACRO_DIRECTIVE)) is_macro = TRUE;
         else if (is_string_equals(parsed_line.main_operand, END_MACRO_DIRECTIVE)) is_macro = FALSE;
         else {
-            if (is_macro) continue;
+            if (is_macro) {
+                should_free_line_output = FALSE;
+                continue;
+            }
             else if (get_macro_item(table, parsed_line.main_operand) != NULL) {
                 current_item = get_macro_item(table, parsed_line.main_operand);
                 if (line_number < current_item->line_number) {
@@ -86,12 +92,16 @@ Bool rewrite_macros(FileOperands *file_operands, MacroTable *table, FILE *output
                            line_number);
                     return FALSE;
                 }
-                line_output = string_array_to_string(current_item->value, current_item->value_size);
+                /* TODO: refactor */
+                line_output = join_string_array(current_item->value, current_item->value_size);
+                should_free_line_output = TRUE;
 
             } else {
                 line_output = raw_line;
+                should_free_line_output = FALSE;
             }
             fputs(line_output, output_file);
+            if(should_free_line_output) free(line_output);
 
 
         }

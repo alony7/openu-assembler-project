@@ -11,6 +11,7 @@ SymbolTable *create_symbol_table() {
     table->capacity = INITIAL_SYMBOL_TABLE_CAPACITY;
     table->size = 0;
     table->symbols = (Symbol *) safe_malloc(sizeof(Symbol) * table->capacity);
+    memset(table->symbols, 0, sizeof(Symbol) * table->capacity);
     return table;
 }
 
@@ -27,9 +28,7 @@ Bool add_symbol(SymbolTable *table, Symbol *symbol) {
     if (table->size == table->capacity) {
         table->capacity += INITIAL_SYMBOL_TABLE_CAPACITY;
         table->symbols = (Symbol *) safe_realloc(table->symbols, table->capacity * sizeof(Symbol));
-        if (table->symbols == NULL) {
-            return FALSE;
-        }
+        memset(table->symbols + table->size, 0, sizeof(Symbol) * INITIAL_SYMBOL_TABLE_CAPACITY);
     }
     table->symbols[table->size] = *symbol;
     table->size++;

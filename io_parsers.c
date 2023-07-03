@@ -1,7 +1,7 @@
 
-#include "io_parsers.h"
 #include "utils.h"
 #include <string.h>
+#include "io_parsers.h"
 #include "consts.h"
 #include "memory_wrappers.h"
 
@@ -39,7 +39,9 @@ void parse_line(char *line, ParsedLine *parsed_line) {
     operand = strtok(line, delimiters);
     parsed_line->main_operand = (char *) safe_malloc(strlen(operand) + 1);
     strcpy(parsed_line->main_operand, operand);
+    CLEAN_STRING(parsed_line->main_operand);
     parameter = strtok(NULL, delimiters);
+    CLEAN_STRING(parameter);
     parameters_count = 0;
     parameters = (char **) safe_malloc(sizeof(char *));
     while (parameter != NULL) {
@@ -48,6 +50,7 @@ void parse_line(char *line, ParsedLine *parsed_line) {
         parameters[parameters_count - 1] = (char *) safe_malloc(strlen(parameter) + 1);
         strcpy(parameters[parameters_count - 1], parameter);
         parameter = strtok(NULL, delimiters);
+        CLEAN_STRING(parameter);
     }
     parsed_line->parameters = parameters;
     parsed_line->parameters_count = parameters_count;
@@ -112,3 +115,4 @@ void build_output_filename(char *base_name, char *suffix, char *output_buffer) {
     strcpy(output_buffer, base_name);
     strcat(output_buffer, suffix);
 }
+

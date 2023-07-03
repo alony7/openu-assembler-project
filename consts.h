@@ -49,3 +49,5 @@
 #define ARE_START_INDEX 0
 #define ARE_END_INDEX 2
 #define EXIT_FAILURE 1
+#define LINUX_CRLF 13
+#define WINDOWS_CRLF 10

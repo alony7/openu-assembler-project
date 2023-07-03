@@ -28,9 +28,6 @@ Bool add_macro_item(MacroTable *table, MacroItem *item) {
     if (table->size == table->capacity) {
         table->capacity += MACRO_TABLE_CAPACITY;
         table->items = (MacroItem *) safe_realloc(table->items, table->capacity * sizeof(MacroItem));
-        if (table->items == NULL) {
-            return FALSE;
-        }
     }
     table->items[table->size] = *item;
     table->size++;
@@ -39,7 +36,7 @@ Bool add_macro_item(MacroTable *table, MacroItem *item) {
 
 void free_macro_item(MacroItem *item) {
     free(item->name);
-    free(item->value);
+    free_macro_item_value(item->value);
 }
 
 
@@ -58,7 +55,7 @@ MacroItem *get_macro_item(MacroTable *table, char *name) {
 void free_macro_table(MacroTable *table) {
     int i;
     for (i = 0; i < table->size; i++) {
-        free_macro_item(&table->items[i]);
+        free_macro_item(&(table->items[i]));
     }
     free(table->items);
     free(table);
@@ -70,18 +67,11 @@ Bool append_macro_item_value(MacroItem *item, char *value_to_append) {
 
     if (item->value == NULL) {
         item->value = (char **) safe_malloc(2 * sizeof(char *));
-        if (item->value == NULL) {
-            return FALSE;
-        }
         item->value[0] = duplicate_string(value_to_append);
         item->value[1] = NULL;
     } else {
         for (i = 0; item->value[i] != NULL; i++);
         new_value = (char **) safe_realloc(item->value, (i + 2) * sizeof(char *));
-        if (new_value == NULL) {
-            return FALSE;
-        }
-
         item->value = new_value;
         item->value[i] = duplicate_string(value_to_append);
         item->value[i + 1] = NULL;
@@ -89,4 +79,12 @@ Bool append_macro_item_value(MacroItem *item, char *value_to_append) {
 
     item->value_size += 1;
     return TRUE;
+}
+
+void free_macro_item_value(char **value) {
+    int i;
+    for (i = 0; value[i] != NULL; i++) {
+        free(value[i]);
+    }
+    free(value);
 }
