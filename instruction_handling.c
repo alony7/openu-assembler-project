@@ -26,13 +26,13 @@ static AddressingType get_addressing_type(char *operand);
 
 static void parse_int_to_word(Word *word, int num, Bool add_ARE);
 
-static Bool code_word_from_operand(ParsedLine *line, Word *code_image, int *ic, char *raw_operand, AddressingType addressing_type, OperandContext context);
+static Bool code_word_from_operand(ParsedLine *line, Word *code_image, const int *ic, char *raw_operand, AddressingType addressing_type, OperandContext context);
 
 static void set_word_to_zero(Word *word);
 
 static void code_number_into_word_bits(Word *word, int number, int offset, int length);
 
-static InstructionOptions get_instruction_options(InstructionCode i_code);
+static void get_instruction_options(InstructionCode i_code, InstructionOptions *i_options);
 
 static Bool is_legal_string_operand(ParsedLine *line);
 
@@ -125,14 +125,12 @@ Bool address_string_instruction(ParsedLine *line, Word *data_image, int *dc) {
 }
 
 /* TODO: make this method not update  ic */
-Bool code_word_from_operand(ParsedLine *line, Word *code_image, int *ic, char *raw_operand, AddressingType const addressing_type, OperandContext const context) {
+Bool code_word_from_operand(ParsedLine *line, Word *code_image,const int *ic, char *raw_operand, AddressingType const addressing_type, OperandContext const context) {
     Register reg;
     if (addressing_type == IMMEDIATE) {
         parse_int_to_word(code_image + *ic, parse_int(raw_operand), TRUE);
-        (*ic)++;
     } else if (addressing_type == DIRECT) {
         set_word_to_zero(&code_image[*ic]);
-        (*ic)++;
     } else {
         reg = get_register(raw_operand);
         if (reg == INVALID_REGISTER) {
@@ -144,7 +142,6 @@ Bool code_word_from_operand(ParsedLine *line, Word *code_image, int *ic, char *r
         } else {
             parse_registers_to_word(&(code_image[*ic]), reg, 0);
         }
-        (*ic)++;
     }
     return TRUE;
 }
@@ -193,10 +190,13 @@ Bool handle_parameter_operands(ParsedLine *line, Word *code_image, int *ic, char
         } else {
             CHECK_AND_UPDATE_SUCCESS(is_success, code_word_from_operand(line, code_image, ic, raw_src_operand, src_op, SOURCE));
         }
+        (*ic)++;
     } else {
         if (CHECK_AND_UPDATE_SUCCESS(is_success, code_word_from_operand(line, code_image, ic, raw_src_operand, src_op, SOURCE))) {
+            (*ic)++;
             if (!(src_op == REGISTER && dest_op == REGISTER)) {
                 CHECK_AND_UPDATE_SUCCESS(is_success, code_word_from_operand(line, code_image, ic, raw_dest_operand, dest_op, DESTINATION));
+                (*ic)++;
             } else {
                 src_register = get_register(raw_src_operand);
                 dest_register = get_register(raw_dest_operand);
