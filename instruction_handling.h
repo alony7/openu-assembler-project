@@ -21,7 +21,7 @@ typedef enum Opcode {
     JSR = 13,
     RTS = 14,
     STOP = 15,
-    INVALID_OPCODE = -1
+    INVALID_INSTRUCTION = -1
 } InstructionCode;
 
 typedef struct {
@@ -77,10 +77,10 @@ typedef struct ParameterMode {
     Bool is_register;
 } ParameterMode;
 
-typedef struct OpcodeModes {
+typedef struct InstructionOptions {
     ParameterMode src_op;
     ParameterMode dest_op;
-} OpcodeMode;
+} InstructionOptions;
 
 typedef enum Register {
     R0 = 0,

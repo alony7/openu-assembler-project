@@ -104,7 +104,7 @@ InstructionCode get_instruction_code(char *command) {
         return RTS;
     else if (strcmp(command, STOP_COMMAND) == 0)
         return STOP;
-    return INVALID_OPCODE;
+    return INVALID_INSTRUCTION;
 }
 
 Register get_register(char *operand) {
