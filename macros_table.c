@@ -27,9 +27,9 @@ MacroItem *create_macro_item(char *name, char **value, int line_number, int valu
 Bool add_macro_item(MacroTable *table, MacroItem *item) {
     if (table->size == table->capacity) {
         table->capacity += MACRO_TABLE_CAPACITY;
-        table->items = (MacroItem *) safe_realloc(table->items, table->capacity * sizeof(MacroItem));
+        table->items = (MacroItem **) safe_realloc(table->items, table->capacity * sizeof(MacroItem *));
     }
-    table->items[table->size] = *item;
+    table->items[table->size] = item;
     table->size++;
     return TRUE;
 }
@@ -37,6 +37,7 @@ Bool add_macro_item(MacroTable *table, MacroItem *item) {
 void free_macro_item(MacroItem *item) {
     free(item->name);
     free_macro_item_value(item->value);
+    free(item);
 }
 
 
@@ -44,7 +45,7 @@ MacroItem *get_macro_item(MacroTable *table, char *name) {
     int i;
     MacroItem *item = NULL;
     for (i = 0; i < table->size; i++) {
-        item = &table->items[i];
+        item = table->items[i];
         if (strcmp(item->name, name) == 0) {
             return item;
         }
@@ -55,7 +56,7 @@ MacroItem *get_macro_item(MacroTable *table, char *name) {
 void free_macro_table(MacroTable *table) {
     int i;
     for (i = 0; i < table->size; i++) {
-        free_macro_item(&(table->items[i]));
+        free_macro_item(table->items[i]);
     }
     free(table->items);
     free(table);

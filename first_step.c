@@ -13,7 +13,7 @@ static void add_ic_to_all_data_addresses(SymbolTable *table, int ic) {
     Symbol *symbol;
     int i;
     for (i = 0; i < table->size; i++) {
-        symbol = &(table->symbols[i]);
+        symbol = table->symbols[i];
         if (symbol->type == DATA || symbol->type == STRING) {
             symbol->address += ic;
         }

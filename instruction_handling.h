@@ -60,7 +60,7 @@ typedef struct {
 } MacroItem;
 
 typedef struct {
-    MacroItem *items;
+    MacroItem **items;
     int capacity;
     int size;
 } MacroTable;

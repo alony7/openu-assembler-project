@@ -42,7 +42,6 @@ static void execute_program(int argc, char *argv[]) {
 
         if (!expand_file_macros(as_filename, am_filename)) {
             throw_system_error(join_strings(3, "encountered errors while expanding macros. skipping file: '", as_filename, "' ..."), TRUE);
-            free_file_operands(file_operands);
             continue;
         }
         label_symbol_table = create_symbol_table();

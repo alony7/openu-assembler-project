@@ -251,6 +251,7 @@ Bool handle_instruction(const ParsedLine *line, Word *code_image, int *ic, Instr
 
 void advance_line_operands(ParsedLine *line) {
     int i = 0;
+    free(line->main_operand);
     line->main_operand = line->parameters[0];
     for (i = 0; i < line->parameters_count - 1; i++) {
         line->parameters[i] = line->parameters[i + 1];
