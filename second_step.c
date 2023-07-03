@@ -47,6 +47,7 @@ Bool process_line(ParsedLine *line, int *ic, Word *code_image, SymbolTable *labe
     switch (get_instruction_type(line->main_operand)) {
         case (ENTRY):
             if (get_symbol(labels_table, line->parameters[0]) == NULL) {
+                /* TODO fix bug where comma validations throw this */
                 throw_program_error(line->line_number, join_strings(3, "entry '", line->parameters[0], "' is not defined in this file scope"), line->file_name, TRUE);
                 return FALSE;
             }

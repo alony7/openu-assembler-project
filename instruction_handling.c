@@ -84,7 +84,6 @@ void parse_int_to_word(Word *word, int num, Bool add_ARE) {
 }
 
 Bool address_data_instruction(ParsedLine *line, Word *data_image, int *dc) {
-    /* TODO: valdiate original line is correctly formatted */
     int i;
     for (i = 0; i < line->parameters_count; i++) {
         parse_int_to_word(&(data_image[*dc]), parse_int(line->parameters[i]), FALSE);
@@ -112,7 +111,6 @@ Bool is_legal_string_operand(ParsedLine *line) {
 Bool address_string_instruction(ParsedLine *line, Word *data_image, int *dc) {
     int i;
     char *string_token = line->parameters[0];
-    /* TODO: valdiate original line is correctly formatted */
     if (!is_legal_string_operand(line)) return FALSE;
     trim_string_quotes(string_token);
     for (i = 0; i < strlen(string_token); i++) {
@@ -124,7 +122,6 @@ Bool address_string_instruction(ParsedLine *line, Word *data_image, int *dc) {
     return TRUE;
 }
 
-/* TODO: make this method not update  ic */
 Bool code_word_from_operand(ParsedLine *line, Word *code_image,const int *ic, char *raw_operand, AddressingType const addressing_type, OperandContext const context) {
     Register reg;
     if (addressing_type == IMMEDIATE) {
@@ -155,7 +152,6 @@ Bool instruction_has_destination(InstructionOptions i_options) {
 }
 
 Bool address_code_instruction(ParsedLine *line, Word *code_image, int *ic) {
-    /* TODO:  valdiate original line is correctly formatted */
     char *raw_src_operand = NULL, *raw_dest_operand = NULL;
     AddressingType src_op = {0}, dest_op = {0};
     InstructionOptions i_options = {0};
@@ -298,7 +294,6 @@ void build_instruction_options(int src_is_immediate, int src_is_direct, int src_
     i_options->dest_op.is_immediate = dest_is_immediate;
 }
 
-/* TODO: make this dynamic */
 void get_instruction_options(InstructionCode i_code, InstructionOptions *i_options) {
     switch (i_code) {
         case MOV:

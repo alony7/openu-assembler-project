@@ -10,7 +10,6 @@ static Bool fill_macro_table(FileOperands *file_operands, MacroTable *table);
 
 static Bool rewrite_macros(FileOperands *file_operands, MacroTable *table, FILE *output_file);
 
-/*TODO: refactor printf to error handling*/
 Bool fill_macro_table(FileOperands *file_operands, MacroTable *table) {
     int line_number = 0;
     char *raw_line = NULL;
