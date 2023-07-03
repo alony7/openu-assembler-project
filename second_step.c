@@ -1,11 +1,11 @@
 #include "util_types.h"
 #include "symbol_table.h"
 
-static Bool rewrite_dynamic_words(AddressingType operand_type, int *ic, Word *code_image, SymbolTable *labels_table, SymbolTable *relocations_table, SymbolTable *externals_table, ParsedLine *line, int parameter_index);
+static Bool rewrite_dynamic_words(AddressingType operand_type, const int *ic, Word *code_image, SymbolTable *labels_table, SymbolTable *relocations_table, SymbolTable *externals_table, ParsedLine *line, int parameter_index);
 
 static Bool process_line(ParsedLine *line, int *ic, Word *code_image, SymbolTable *labels_table, SymbolTable *relocations_table, SymbolTable *externals_table);
 
-Bool rewrite_dynamic_words(AddressingType operand_type, int *ic, Word *code_image, SymbolTable *labels_table, SymbolTable *relocations_table, SymbolTable *externals_table, ParsedLine *line, int parameter_index) {
+Bool rewrite_dynamic_words(AddressingType operand_type, const int *ic, Word *code_image, SymbolTable *labels_table, SymbolTable *relocations_table, SymbolTable *externals_table, ParsedLine *line, int parameter_index) {
     Bool is_external = FALSE;
     Symbol *label_symbol = NULL;
     Symbol *relocation_symbol = NULL;

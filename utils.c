@@ -5,7 +5,7 @@
 #include "error.h"
 #include "memory_wrappers.h"
 
-char base64_encode(int value);
+char base64_encode(unsigned int value);
 
 /* TODO: make this work with existing join string */
 char *join_string_array(char **array, int size) {
@@ -53,7 +53,7 @@ Bool is_integer(char *str) {
     return TRUE;
 }
 
-Bool is_comment(char *instruction) {
+Bool is_comment(const char *instruction) {
     return instruction[0] == COMMENT_PREFIX;
 }
 
@@ -145,14 +145,13 @@ Bool is_label(char *instruction) {
     return instruction[strlen(instruction) - 1] == LABEL_TERMINATOR;
 }
 
-/* TODO: report error */
+/* TODO: report error for numbers too large */
 int parse_int(char *str) {
     int num;
     sscanf(str, "%d", &num);
     return num;
 }
 
-/* TODO: free memory */
 char *join_strings(int num_strings, ...) {
     va_list args;
     unsigned int total_length = 0;
@@ -187,7 +186,7 @@ void trim_string_quotes(char *str) {
     str[strlen(str) - 1] = '\0';
 }
 
-char base64_encode(int value) {
+char base64_encode(unsigned int value) {
     if (value < 26) {
         return 'A' + value;
     } else if (value < 52) {
@@ -202,8 +201,8 @@ char base64_encode(int value) {
 }
 
 void word_to_base64(Word *word, char *base64) {
-    int first6Bits = 0;
-    int second6Bits = 0;
+    unsigned int first6Bits = 0;
+    unsigned int second6Bits = 0;
     int i;
 
     for (i = 5; i >= 0; i--) {

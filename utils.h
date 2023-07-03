@@ -12,7 +12,7 @@ char *duplicate_string(const char *str);
 
 Bool is_integer(char *str);
 
-Bool is_comment(char *operand);
+Bool is_comment(const char *operand);
 
 Bool is_string_equals(const char *line, const char *directive);
 

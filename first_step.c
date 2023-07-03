@@ -5,7 +5,7 @@
 
 static Bool handle_line(SymbolTable *labels_table, SymbolTable *relocations_table, ParsedLine *line, Word *data_image, Word *code_image, int *ic, int *dc);
 
-static Bool parse_label(ParsedLine *line, SymbolTable *labels_table, SymbolTable *relocations_table, int *ic, int *dc, InstructionType *next_instruction_type);
+static Bool parse_label(ParsedLine *line, SymbolTable *labels_table, SymbolTable *relocations_table, const int *ic, const int *dc, InstructionType *next_instruction_type);
 
 static void add_ic_to_all_data_addresses(SymbolTable *table, int ic);
 
@@ -21,7 +21,7 @@ static void add_ic_to_all_data_addresses(SymbolTable *table, int ic) {
 
 }
 
-Bool parse_label(ParsedLine *line, SymbolTable *labels_table, SymbolTable *relocations_table, int *ic, int *dc, InstructionType *next_instruction_type) {
+Bool parse_label(ParsedLine *line, SymbolTable *labels_table, SymbolTable *relocations_table, const int *ic,const int *dc, InstructionType *next_instruction_type) {
     Symbol *symbol = NULL;
     InstructionType label_instruction_type;
     line->main_operand[strlen(line->main_operand) - 1] = NULL_CHAR;
@@ -71,7 +71,7 @@ static Bool handle_line(SymbolTable *labels_table, SymbolTable *relocations_tabl
         if (!parse_label(line, labels_table, relocations_table, ic, dc, &instruction_type)) {
             return FALSE;
         }
-    };
+    }
     switch (instruction_type) {
         case (COMMENT):
         case (EMPTY_LINE):
@@ -108,7 +108,6 @@ static Bool handle_line(SymbolTable *labels_table, SymbolTable *relocations_tabl
             CHECK_AND_UPDATE_SUCCESS(is_success, address_code_instruction(line, code_image, ic));
             break;
         default:
-            printf("length of invalid instruction %s is %d\n", line->main_operand, (int) strlen(line->main_operand));
             throw_program_error(line->line_number, join_strings(2, "invalid instruction: ", line->main_operand), line->file_name, TRUE);
             return FALSE;
     }

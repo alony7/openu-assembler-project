@@ -13,10 +13,9 @@ static Bool rewrite_macros(FileOperands *file_operands, MacroTable *table, FILE 
 /*TODO: refactor printf to error handling*/
 Bool fill_macro_table(FileOperands *file_operands, MacroTable *table) {
     int line_number = 0;
-    char *raw_line;
-    ParsedLine parsed_line;
-    MacroItem *item;
-    MacroItem *tmp_item = NULL;
+    char *raw_line = NULL;
+    ParsedLine parsed_line = {0};
+    MacroItem *item = NULL, *tmp_item = NULL;
     Bool is_macro = FALSE;
     for (line_number = 0; line_number < file_operands->size; line_number++) {
         parsed_line = file_operands->lines[line_number];
@@ -26,11 +25,11 @@ Bool fill_macro_table(FileOperands *file_operands, MacroTable *table) {
         }
         if (is_string_equals(parsed_line.main_operand, END_MACRO_DIRECTIVE)) {
             if (!is_macro) {
-                printf("Error: invalid end of macro in line %d\n", line_number);
+                throw_program_error(line_number, "invalid end of macro",parsed_line.file_name,FALSE);
                 return FALSE;
             }
             if (parsed_line.parameters_count != 0) {
-                printf("Error: invalid number of parameters for '%s' in line %d\n", END_MACRO_DIRECTIVE, line_number);
+                throw_program_error(line_number, join_strings(2,END_MACRO_DIRECTIVE," takes no parameters"),parsed_line.file_name,TRUE);
                 return FALSE;
             }
             is_macro = FALSE;
@@ -39,15 +38,19 @@ Bool fill_macro_table(FileOperands *file_operands, MacroTable *table) {
         } else if (is_string_equals(parsed_line.main_operand, START_MACRO_DIRECTIVE)) {
             /*TODO: validate if macro name is caught by command*/
             if (parsed_line.parameters_count != 1) {
-                printf("Error: invalid number of parameters for '%s' in line %d\n", START_MACRO_DIRECTIVE, line_number);
+                throw_program_error(line_number, join_strings(2,START_MACRO_DIRECTIVE," takes exactly 1 parameter"),parsed_line.file_name,TRUE);
+                return FALSE;
+            }
+            if(get_instruction_type(parsed_line.parameters[0]) != UNKNOWN){
+                throw_program_error(line_number, join_strings(2,"macro name cannot be an instruction name: ",parsed_line.parameters[0]),parsed_line.file_name,TRUE);
                 return FALSE;
             }
             if (is_macro) {
-                printf("Error: nested macro in line %d\n", line_number);
+                throw_program_error(line_number, "nested macros are not allowed",parsed_line.file_name,FALSE);
                 return FALSE;
             }
             if ((tmp_item = get_macro_item(table, parsed_line.parameters[0])) != NULL) {
-                printf("Error: macro '%s' already exists in line %d\n", tmp_item->name, tmp_item->line_number);
+                throw_program_error(line_number, join_strings(3,"macro '",parsed_line.parameters[0],"' already exists"),parsed_line.file_name,TRUE);
                 return FALSE;
             }
             item = create_macro_item(parsed_line.parameters[0], NULL, line_number, 0);
@@ -63,13 +66,10 @@ Bool fill_macro_table(FileOperands *file_operands, MacroTable *table) {
     return TRUE;
 }
 
-/* TODO: Check if i need to delete empty lines and comments*/
 Bool rewrite_macros(FileOperands *file_operands, MacroTable *table, FILE *output_file) {
     int line_number = 0;
-    Bool is_macro = FALSE;
-    Bool should_free_line_output = FALSE;
-    char *line_output = NULL;
-    char *raw_line = NULL;
+    Bool is_macro = FALSE,should_free_line_output = FALSE;
+    char *line_output = NULL,*raw_line = NULL;
     ParsedLine parsed_line;
     MacroItem *current_item = NULL;
     for (line_number = 0; line_number < file_operands->size; line_number++) {
@@ -88,8 +88,7 @@ Bool rewrite_macros(FileOperands *file_operands, MacroTable *table, FILE *output
             else if (get_macro_item(table, parsed_line.main_operand) != NULL) {
                 current_item = get_macro_item(table, parsed_line.main_operand);
                 if (line_number < current_item->line_number) {
-                    printf("Error: macro '%s' is used before definition in line %d\n", current_item->name,
-                           line_number);
+                    throw_program_error(parsed_line.line_number, join_strings(3,"macro '",current_item->name,"' is used before definition"),parsed_line.file_name,TRUE);
                     return FALSE;
                 }
                 /* TODO: refactor */

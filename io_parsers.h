@@ -20,7 +20,7 @@ typedef struct FileOperands {
 
 FILE *create_file_stream(char *file_name, char *mode);
 
-FileOperands *parse_lines_from_file(FILE *file, char *file_name);
+FileOperands *parse_lines_from_file(FILE *file_stream, char *file_name);
 
 void free_file_operands(FileOperands *file_operands);
 
