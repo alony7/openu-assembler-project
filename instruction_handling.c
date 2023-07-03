@@ -2,6 +2,7 @@
 #include "error.h"
 #include <string.h>
 #include <malloc.h>
+#include <ctype.h>
 #include "instruction_handling.h"
 #include "utils.h"
 
@@ -161,13 +162,17 @@ Bool address_code_instruction(ParsedLine *line, Word *code_image, int *ic) {
     char *raw_src_operand = NULL, *raw_dest_operand = NULL;
     AddressingType src_op = {0}, dest_op = {0};
     InstructionOptions i_options = {0};
+    ParameterMode src_mode = {0}, dest_mode = {0};
+    i_options.src_op = src_mode;
+    i_options.dest_op = dest_mode;
+
 
     InstructionCode op_num = get_instruction_code(line->main_operand);
     if (op_num == INVALID_INSTRUCTION) {
         throw_program_error(line->line_number, join_strings(2, "invalid instruction: ", line->main_operand), line->file_name, TRUE);
         return FALSE;
     }
-    i_options = get_instruction_options(op_num);
+    get_instruction_options(op_num, &i_options);
     if (line->parameters_count != instruction_has_source(i_options) + instruction_has_destination(i_options)) {
         throw_program_error(line->line_number, join_strings(2, "invalid number of operands for instruction: ", line->main_operand), line->file_name, TRUE);
         return FALSE;
@@ -294,19 +299,15 @@ void build_instruction_options(int src_is_immediate, int src_is_direct, int src_
 }
 
 /* TODO: make this dynamic */
-InstructionOptions get_instruction_options(InstructionCode i_code) {
-    InstructionOptions i_options = {0};
-    ParameterMode src_mode = {0}, dest_mode = {0};
-    i_options.src_op = src_mode;
-    i_options.dest_op = dest_mode;
+void get_instruction_options(InstructionCode i_code, InstructionOptions *i_options) {
     switch (i_code) {
         case MOV:
         case ADD:
         case SUB:
-            build_instruction_options(TRUE, TRUE, TRUE, FALSE, TRUE, TRUE, &i_options);
+            build_instruction_options(TRUE, TRUE, TRUE, FALSE, TRUE, TRUE, i_options);
             break;
         case CMP:
-            build_instruction_options(TRUE, TRUE, TRUE, TRUE, TRUE, TRUE, &i_options);
+            build_instruction_options(TRUE, TRUE, TRUE, TRUE, TRUE, TRUE, i_options);
             break;
         case NOT:
         case CLR:
@@ -316,25 +317,63 @@ InstructionOptions get_instruction_options(InstructionCode i_code) {
         case BNE:
         case RED:
         case JSR:
-            build_instruction_options(FALSE, FALSE, FALSE, FALSE, TRUE, TRUE, &i_options);
+            build_instruction_options(FALSE, FALSE, FALSE, FALSE, TRUE, TRUE, i_options);
             break;
         case LEA:
-            build_instruction_options(FALSE, TRUE, FALSE, FALSE, TRUE, TRUE, &i_options);
+            build_instruction_options(FALSE, TRUE, FALSE, FALSE, TRUE, TRUE, i_options);
             break;
         case PRN:
-            build_instruction_options(FALSE, FALSE, FALSE, TRUE, TRUE, TRUE, &i_options);
+            build_instruction_options(FALSE, FALSE, FALSE, TRUE, TRUE, TRUE, i_options);
             break;
         case RTS:
         case STOP:
-            build_instruction_options(FALSE, FALSE, FALSE, FALSE, FALSE, FALSE, &i_options);
+            build_instruction_options(FALSE, FALSE, FALSE, FALSE, FALSE, FALSE, i_options);
             break;
         default:
-            build_instruction_options(FALSE, FALSE, FALSE, FALSE, FALSE, FALSE, &i_options);
+            build_instruction_options(FALSE, FALSE, FALSE, FALSE, FALSE, FALSE, i_options);
     }
-    return i_options;
 }
 
 void get_word_addressing_types(Word *word, AddressingType *src, AddressingType *dest) {
     *src = (AddressingType) (word->bits[9] + (word->bits[10] << 1) + (word->bits[11] << 2));
     *dest = (AddressingType) (word->bits[2] + (word->bits[3] << 1) + (word->bits[4] << 2));
+}
+
+Bool is_valid_commas(char *line, char *error_message) {
+    int len = strlen(line);
+    int token_count = 0, i = 0;
+    Bool is_previous_char_comma = FALSE;
+
+    for (i = 0; i < len; i++) {
+        while (!isspace(line[i]) && line[i] != ',') {
+            is_previous_char_comma = FALSE;
+            if(i<len-1){
+                i++;
+            } else {
+                break;
+            }
+        };
+        if (line[i - 1] != ':') {
+            token_count++;
+        }
+        if (isspace(line[i])) continue;
+        if (line[i] == ',') {
+            if (token_count <= 1) {
+                strcpy(error_message, "misplaced comma before the first parameter");
+                return FALSE;
+            };
+            if (is_previous_char_comma) {
+                strcpy(error_message, "multiple consecutive commas");
+                return FALSE;
+            };
+            is_previous_char_comma = TRUE;
+        } else {
+            is_previous_char_comma = FALSE;
+        }
+    }
+    if(is_previous_char_comma) {
+        strcpy(error_message, "misplaced comma after the last parameter");
+        return FALSE;
+    }
+    return TRUE;
 }
