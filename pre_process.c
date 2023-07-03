@@ -23,7 +23,7 @@ Bool fill_macro_table(FileOperands *file_operands, MacroTable *table) {
         if (is_comment(raw_line) && !is_macro) {
             continue;
         }
-        if (is_string_equals(parsed_line.operand, END_MACRO_DIRECTIVE)) {
+        if (is_string_equals(parsed_line.main_operand, END_MACRO_DIRECTIVE)) {
             if (!is_macro) {
                 printf("Error: invalid end of macro in line %d\n", line_number);
                 return FALSE;
@@ -35,7 +35,7 @@ Bool fill_macro_table(FileOperands *file_operands, MacroTable *table) {
             is_macro = FALSE;
             add_macro_item(table, item);
             continue;
-        } else if (is_string_equals(parsed_line.operand, START_MACRO_DIRECTIVE)) {
+        } else if (is_string_equals(parsed_line.main_operand, START_MACRO_DIRECTIVE)) {
             /*TODO: validate if macro name is caught by command*/
             if (parsed_line.parameters_count != 1) {
                 printf("Error: invalid number of parameters for '%s' in line %d\n", START_MACRO_DIRECTIVE, line_number);
@@ -75,12 +75,12 @@ Bool rewrite_macros(FileOperands *file_operands, MacroTable *table, FILE *output
         raw_line = line_output = parsed_line.original_line;
         /* comment line */
         if (is_comment(raw_line) || is_empty_line(raw_line)) continue;
-        else if (is_string_equals(parsed_line.operand, START_MACRO_DIRECTIVE)) is_macro = TRUE;
-        else if (is_string_equals(parsed_line.operand, END_MACRO_DIRECTIVE)) is_macro = FALSE;
+        else if (is_string_equals(parsed_line.main_operand, START_MACRO_DIRECTIVE)) is_macro = TRUE;
+        else if (is_string_equals(parsed_line.main_operand, END_MACRO_DIRECTIVE)) is_macro = FALSE;
         else {
             if (is_macro) continue;
-            else if (get_macro_item(table, parsed_line.operand) != NULL) {
-                current_item = get_macro_item(table, parsed_line.operand);
+            else if (get_macro_item(table, parsed_line.main_operand) != NULL) {
+                current_item = get_macro_item(table, parsed_line.main_operand);
                 if (line_number < current_item->line_number) {
                     printf("Error: macro '%s' is used before definition in line %d\n", current_item->name,
                            line_number);

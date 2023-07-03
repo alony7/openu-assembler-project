@@ -31,14 +31,14 @@ void parse_line(char *line, ParsedLine *parsed_line) {
 
     if (line[0] == '\n' || line[0] == '\0') {
         /* Empty line, no further processing needed*/
-        parsed_line->operand = NULL;
+        parsed_line->main_operand = NULL;
         parsed_line->parameters = NULL;
         parsed_line->parameters_count = 0;
         return;
     }
     operand = strtok(line, delimiters);
-    parsed_line->operand = (char *) safe_malloc(strlen(operand) + 1);
-    strcpy(parsed_line->operand, operand);
+    parsed_line->main_operand = (char *) safe_malloc(strlen(operand) + 1);
+    strcpy(parsed_line->main_operand, operand);
     parameter = strtok(NULL, delimiters);
     parameters_count = 0;
     parameters = (char **) safe_malloc(sizeof(char *));
@@ -92,7 +92,7 @@ FileOperands *parse_lines_from_file(FILE *file, char *file_name) {
 
 void free_parsed_line(ParsedLine *line) {
     int i;
-    free(line->operand);
+    free(line->main_operand);
     for (i = 0; i < line->parameters_count; i++) {
         free(line->parameters[i]);
     }

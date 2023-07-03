@@ -24,28 +24,28 @@ static void add_ic_to_all_data_addresses(SymbolTable *table, int ic) {
 static Bool parse_label(ParsedLine *line, SymbolTable *labels_table, SymbolTable *relocations_table, int *ic, int *dc, InstructionType *next_instruction_type) {
     Symbol *symbol = NULL;
     InstructionType label_instruction_type;
-    line->operand[strlen(line->operand) - 1] = NULL_CHAR;
+    line->main_operand[strlen(line->main_operand) - 1] = NULL_CHAR;
     if (line->parameters_count == 0) {
         throw_program_error(line->line_number, "empty label", line->file_name, FALSE);
         return FALSE;
     }
-    if (get_symbol(labels_table, line->operand) != NULL) {
-        throw_program_error(line->line_number, join_strings(3, "label '", line->operand, "' has already been declared"), line->file_name, TRUE);
+    if (get_symbol(labels_table, line->main_operand) != NULL) {
+        throw_program_error(line->line_number, join_strings(3, "label '", line->main_operand, "' has already been declared"), line->file_name, TRUE);
         return FALSE;
     }
-    if ((symbol = get_symbol(relocations_table, line->operand)) != NULL && symbol->type == EXTERN) {
-        throw_program_error(line->line_number, join_strings(3, "label '", line->operand, "' has already been declared as external"), line->file_name, TRUE);
+    if ((symbol = get_symbol(relocations_table, line->main_operand)) != NULL && symbol->type == EXTERN) {
+        throw_program_error(line->line_number, join_strings(3, "label '", line->main_operand, "' has already been declared as external"), line->file_name, TRUE);
         return FALSE;
     }
     label_instruction_type = get_instruction_type(line->parameters[0]);
     switch (label_instruction_type) {
         case (DATA):
         case (STRING):
-            symbol = create_symbol(line->operand, *dc, label_instruction_type);
+            symbol = create_symbol(line->main_operand, *dc, label_instruction_type);
             add_symbol(labels_table, symbol);
             break;
         case (COMMAND):
-            symbol = create_symbol(line->operand, *ic, COMMAND);
+            symbol = create_symbol(line->main_operand, *ic, COMMAND);
             add_symbol(labels_table, symbol);
             break;
         default:
@@ -63,10 +63,10 @@ static Bool handle_line(SymbolTable *labels_table, SymbolTable *relocations_tabl
     Symbol *symbol;
     Bool is_success = TRUE;
     InstructionType instruction_type;
-    if (line->operand == NULL) {
+    if (line->main_operand == NULL) {
         return TRUE;
     }
-    instruction_type = get_instruction_type(line->operand);
+    instruction_type = get_instruction_type(line->main_operand);
     if (instruction_type == LABEL) {
         if (!parse_label(line, labels_table, relocations_table, ic, dc, &instruction_type)) {
             return FALSE;
@@ -108,7 +108,7 @@ static Bool handle_line(SymbolTable *labels_table, SymbolTable *relocations_tabl
             CHECK_AND_UPDATE_SUCCESS(is_success, address_code_instruction(line, code_image, ic));
             break;
         default:
-            throw_program_error(line->line_number, join_strings(2, "invalid instruction: ", line->operand), line->file_name, TRUE);
+            throw_program_error(line->line_number, join_strings(2, "invalid instruction: ", line->main_operand), line->file_name, TRUE);
             return FALSE;
     }
     return is_success;

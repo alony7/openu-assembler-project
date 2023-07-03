@@ -8,7 +8,7 @@ typedef struct ParsedLine {
     char original_line[MAX_LINE_LENGTH];
     int line_number;
     char file_name[MAX_FILENAME_LENGTH];
-    char *operand;
+    char *main_operand;
     char **parameters;
     int parameters_count;
 } ParsedLine;

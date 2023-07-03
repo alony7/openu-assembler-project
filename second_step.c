@@ -41,10 +41,10 @@ Bool process_line(ParsedLine *line, int *ic, Word *code_image, SymbolTable *labe
     Word *current_word = NULL;
     AddressingType src_operand_type = NO_VALUE;
     AddressingType dest_operand_type = NO_VALUE;
-    if (line->operand == NULL) {
+    if (line->main_operand == NULL) {
         return TRUE;
     }
-    switch (get_instruction_type(line->operand)) {
+    switch (get_instruction_type(line->main_operand)) {
         case (ENTRY):
             if (get_symbol(labels_table, line->parameters[0]) == NULL) {
                 throw_program_error(line->line_number, join_strings(3, "entry '", line->parameters[0], "' is not defined in this file scope"), line->file_name, TRUE);

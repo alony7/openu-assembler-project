@@ -161,14 +161,14 @@ Bool address_code_instruction(ParsedLine *line, Word *code_image, int *ic) {
     AddressingType src_op = {0}, dest_op = {0};
     InstructionOptions i_options = {0};
 
-    InstructionCode op_num = get_instruction_code(line->operand);
+    InstructionCode op_num = get_instruction_code(line->main_operand);
     if (op_num == INVALID_INSTRUCTION) {
-        throw_program_error(line->line_number, join_strings(2, "invalid instruction: ", line->operand), line->file_name, TRUE);
+        throw_program_error(line->line_number, join_strings(2, "invalid instruction: ", line->main_operand), line->file_name, TRUE);
         return FALSE;
     }
     i_options = get_instruction_options(op_num);
     if (line->parameters_count != instruction_has_source(i_options) + instruction_has_destination(i_options)) {
-        throw_program_error(line->line_number, join_strings(2, "invalid number of operands for instruction: ", line->operand), line->file_name, TRUE);
+        throw_program_error(line->line_number, join_strings(2, "invalid number of operands for instruction: ", line->main_operand), line->file_name, TRUE);
         return FALSE;
     }
     if (!handle_instruction(line, code_image, ic, &op_num, &i_options, &raw_src_operand, &raw_dest_operand, &src_op, &dest_op)) return FALSE;
@@ -240,7 +240,7 @@ Bool handle_instruction(const ParsedLine *line, Word *code_image, int *ic, Instr
         *dest_op = NO_VALUE;
     }
     if (!is_addressing_types_legal((*i_options), (*src_op), (*dest_op))) {
-        throw_program_error(line->line_number, join_strings(2, "invalid operand type for instruction: ", line->operand), (char *) line->file_name, TRUE);
+        throw_program_error(line->line_number, join_strings(2, "invalid main_operand type for instruction: ", line->main_operand), (char *) line->file_name, TRUE);
         return FALSE;
     }
     parse_operand_to_word(code_image + *ic, (*i_code), (*src_op), (*dest_op));
@@ -250,7 +250,7 @@ Bool handle_instruction(const ParsedLine *line, Word *code_image, int *ic, Instr
 
 void advance_line_operands(ParsedLine *line) {
     int i = 0;
-    line->operand = line->parameters[0];
+    line->main_operand = line->parameters[0];
     for (i = 0; i < line->parameters_count - 1; i++) {
         line->parameters[i] = line->parameters[i + 1];
     }
