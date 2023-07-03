@@ -26,6 +26,9 @@ static void execute_program(int argc, char *argv[]) {
 
 
     /*TODO: extract to function*/
+    /* TODO: empty buffers */
+    /* TODO: keep running after errors in first pass */
+    /* TODO: add warn for as files */
 
     if (num_of_files <= 0) {
         printf("No arguments were given. Exiting...\n");
@@ -63,8 +66,11 @@ static void execute_program(int argc, char *argv[]) {
         build_output_filename(argv[i], OB_FILE_EXTENSION, ob_filename);
         build_output_filename(argv[i], EXT_FILE_EXTENSION, ext_filename);
         build_output_filename(argv[i], ENT_FILE_EXTENSION, ent_filename);
-        generate_output_files(ob_filename, ent_filename, ext_filename, relocations_symbol_table, label_symbol_table, externals_symbol_table, &code_image, data_image, dc, ic);
+        generate_output_files(ob_filename, ent_filename, ext_filename, relocations_symbol_table, label_symbol_table, externals_symbol_table, (Word *) &code_image, data_image, dc, ic);
         printf("File %s processed successfully\n", as_filename);
+        free_symbol_table(label_symbol_table);
+        free_symbol_table(relocations_symbol_table);
+        free_symbol_table(externals_symbol_table);
     }
 
 }

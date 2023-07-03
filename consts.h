@@ -48,3 +48,4 @@
 #define BASE64_WORD_LENGTH 2
 #define ARE_START_INDEX 0
 #define ARE_END_INDEX 2
+#define EXIT_FAILURE 1

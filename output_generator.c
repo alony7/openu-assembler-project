@@ -11,7 +11,7 @@ static void generate_externals_file(const SymbolTable *externals_table, FILE *ex
 Bool generate_output_files(char *object_filename, char *entry_filename, char *extern_filename, SymbolTable *relocation_table, SymbolTable *symbol_table, SymbolTable *externals_table, Word *code_image, Word *data_image, int dc, int ic) {
     FILE *object_file, *entry_file, *extern_file;
 
-    int num_of_command_words = ic - MEMORY_OFFSET, i;
+    int num_of_command_words = ic - MEMORY_OFFSET;
     if (count_symbols_by_type(relocation_table, EXTERN)) {
         extern_file = create_file_stream(extern_filename, WRITE_MODE);
         if (extern_file == NULL) return FALSE;

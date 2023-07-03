@@ -4,7 +4,7 @@
 #include "io_parsers.h"
 #include "error.h"
 
-typedef enum Opcode {
+typedef enum InstructionCode {
     MOV = 0,
     CMP = 1,
     ADD = 2,

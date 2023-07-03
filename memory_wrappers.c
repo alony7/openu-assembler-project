@@ -1,5 +1,6 @@
+#include <stdlib.h>
 #include "memory_wrappers.h"
-
+#include "consts.h"
 void *safe_malloc(unsigned int size) {
     void *ptr = malloc(size);
     if (ptr == NULL) {
