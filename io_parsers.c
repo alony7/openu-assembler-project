@@ -53,6 +53,10 @@ void parse_line(char *line, ParsedLine *parsed_line) {
     }
     parsed_line->parameters = parameters;
     parsed_line->parameters_count = parameters_count;
+    if(parameters_count && *(parameters[parameters_count-1]) == NULL){
+        free(parameters[parameters_count-1]);
+        parsed_line->parameters_count--;
+    }
 }
 
 FileOperands *create_file_operands() {
@@ -62,8 +66,7 @@ FileOperands *create_file_operands() {
     return file_operands;
 }
 
-/*TODO: explain the exercise allowed max lines, and maybe add limit
- * TODO: make this take just the filename*/
+/*TODO: explain the exercise allowed max lines, and maybe add limit */
 FileOperands *parse_lines_from_file(FILE *file_stream, char *file_name) {
     FileOperands *file_operands = create_file_operands();
     ParsedLine *lines = (ParsedLine *) safe_malloc(BASE_LINE_BATCH_SIZE * sizeof(ParsedLine));

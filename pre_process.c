@@ -67,39 +67,34 @@ Bool fill_macro_table(FileOperands *file_operands, MacroTable *table) {
 
 Bool rewrite_macros(FileOperands *file_operands, MacroTable *table, FILE *output_file) {
     int line_number = 0;
-    Bool is_macro = FALSE,should_free_line_output = FALSE;
+    Bool is_macro_line = FALSE,should_free_line_output = FALSE;
     char *line_output = NULL,*raw_line = NULL;
     ParsedLine parsed_line;
     MacroItem *current_item = NULL;
     for (line_number = 0; line_number < file_operands->size; line_number++) {
         parsed_line = file_operands->lines[line_number];
-        /* TODO: this is shit */
-        raw_line = line_output = parsed_line.original_line;
+        raw_line = parsed_line.original_line;
         /* comment line */
         if (is_comment(raw_line) || is_empty_line(raw_line)) continue;
-        else if (is_string_equals(parsed_line.main_operand, START_MACRO_DIRECTIVE)) is_macro = TRUE;
-        else if (is_string_equals(parsed_line.main_operand, END_MACRO_DIRECTIVE)) is_macro = FALSE;
+        else if (is_string_equals(parsed_line.main_operand, START_MACRO_DIRECTIVE)) is_macro_line = TRUE;
+        else if (is_string_equals(parsed_line.main_operand, END_MACRO_DIRECTIVE)) is_macro_line = FALSE;
         else {
-            if (is_macro) {
+            if (is_macro_line) {
                 should_free_line_output = FALSE;
                 continue;
             }
-            else if (get_macro_item(table, parsed_line.main_operand) != NULL) {
-                current_item = get_macro_item(table, parsed_line.main_operand);
+            else if ((current_item = get_macro_item(table, parsed_line.main_operand)) != NULL) {
                 if (line_number < current_item->line_number) {
                     throw_program_error(parsed_line.line_number, join_strings(3,"macro '",current_item->name,"' is used before definition"),parsed_line.file_name,TRUE);
                     return FALSE;
                 }
-                /* TODO: refactor */
                 line_output = join_string_array(current_item->value, current_item->value_size);
-                should_free_line_output = TRUE;
-
+                fputs(line_output, output_file);
+                free(line_output);
             } else {
                 line_output = raw_line;
-                should_free_line_output = FALSE;
+                fputs(line_output, output_file);
             }
-            fputs(line_output, output_file);
-            if(should_free_line_output) free(line_output);
 
 
         }

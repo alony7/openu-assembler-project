@@ -13,4 +13,4 @@ clean:
 	-rm *.o
 
 valgrind: $(TARGET)
-	valgrind --leak-check=full --track-origins=yes --show-leak-kinds=all ./$(TARGET) ./test-files/work1 ./test-files/work2
+	valgrind --leak-check=full --track-origins=yes --show-leak-kinds=all ./$(TARGET) ./test-files/work1 ./test-files/work2; make clean

@@ -59,7 +59,7 @@ Bool parse_label(ParsedLine *line, SymbolTable *labels_table, SymbolTable *reloc
     return TRUE;
 }
 
-static Bool handle_line(SymbolTable *labels_table, SymbolTable *relocations_table, ParsedLine *line, Word *data_image, Word *code_image, int *ic, int *dc) {
+Bool handle_line(SymbolTable *labels_table, SymbolTable *relocations_table, ParsedLine *line, Word *data_image, Word *code_image, int *ic, int *dc) {
     Symbol *symbol;
     char *validation_error[MAX_ERROR_LENGTH];
     Bool is_success = TRUE;

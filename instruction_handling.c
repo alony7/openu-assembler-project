@@ -348,7 +348,7 @@ Bool is_valid_commas(char *line, char *error_message) {
                 break;
             }
         };
-        if (line[i - 1] != ':') {
+        if (i> 0 && line[i - 1] != ':') {
             token_count++;
         }
         if (isspace(line[i])) continue;

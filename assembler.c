@@ -71,7 +71,12 @@ void execute_program(int argc, char *argv[]) {
 
 /*TODO: add detailed comment*/
 /* TODO: add string termination to all strings */
+/* TODO: validate max memory size */
+/* TODO: validate label names are legal */
 /* TODO: fix pragmas */
+/* TODO: change prints to stdout */
+/* TODO: throw for lines too long */
+/* TODO: allow string instructions hold spaces */
 int main(int argc, char *argv[]) {
     execute_program(argc, argv);
     return 0;
