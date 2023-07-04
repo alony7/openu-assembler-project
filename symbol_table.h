@@ -12,7 +12,7 @@ typedef struct Symbol {
 } Symbol;
 
 typedef struct SymbolTable {
-    Symbol *symbols;
+    Symbol **symbols;
     int size;
     int capacity;
 } SymbolTable;

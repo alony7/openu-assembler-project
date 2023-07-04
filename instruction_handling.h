@@ -1,9 +1,10 @@
 #pragma once
+
 #include "util_types.h"
 #include "io_parsers.h"
 #include "error.h"
 
-typedef enum Opcode {
+typedef enum InstructionCode {
     MOV = 0,
     CMP = 1,
     ADD = 2,
@@ -20,19 +21,17 @@ typedef enum Opcode {
     JSR = 13,
     RTS = 14,
     STOP = 15,
-    INVALID_OPCODE = -1
-} Opcode;
+    INVALID_INSTRUCTION = -1
+} InstructionCode;
 
-/* TODO: change to bool */
-typedef struct
-{
-    int bits[WORD_SIZE];
+typedef struct {
+    Bool bits[WORD_SIZE];
 } Word;
 
-typedef enum OperandLocation {
+typedef enum OperandContext {
     SOURCE,
     DESTINATION
-} OperandLocation;
+} OperandContext;
 
 typedef enum InstructionType {
     DATA,
@@ -61,7 +60,7 @@ typedef struct {
 } MacroItem;
 
 typedef struct {
-    MacroItem *items;
+    MacroItem **items;
     int capacity;
     int size;
 } MacroTable;
@@ -70,7 +69,7 @@ typedef enum AddressingMethod {
     ABSOLUTE_ADDRESSING = 0,
     EXTERNAL_ADDRESSING = 1,
     RELOCATABLE_ADDRESSING = 2
-} AddressingMethod ;
+} AddressingMethod;
 
 typedef struct ParameterMode {
     Bool is_immediate;
@@ -78,10 +77,10 @@ typedef struct ParameterMode {
     Bool is_register;
 } ParameterMode;
 
-typedef struct OpcodeModes {
+typedef struct InstructionOptions {
     ParameterMode src_op;
     ParameterMode dest_op;
-} OpcodeMode;
+} InstructionOptions;
 
 typedef enum Register {
     R0 = 0,
@@ -96,9 +95,6 @@ typedef enum Register {
 } Register;
 
 
-
-
-
 InstructionType get_instruction_type(char *instruction);
 
 Bool address_code_instruction(ParsedLine *line, Word *code_image, int *ic);
@@ -107,11 +103,10 @@ Bool address_string_instruction(ParsedLine *line, Word *data_image, int *dc);
 
 Bool address_data_instruction(ParsedLine *line, Word *data_image, int *dc);
 
-void code_number_into_word_bits(Word *word, int number, int offset, int length);
-
-OpcodeMode get_opcode_possible_modes(Opcode opcode);
-
 void advance_line_operands(ParsedLine *line);
 
 void get_word_addressing_types(Word *word, AddressingType *src, AddressingType *dest);
-void parse_symbol_to_word(int symbol_index, Word *word,AddressingMethod addressing_method);
+
+void parse_symbol_to_word(int symbol_index, Word *word, AddressingMethod addressing_method);
+
+Bool is_valid_commas(char *line, char *error_message);

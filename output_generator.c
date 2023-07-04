@@ -1,27 +1,29 @@
 #include "output_generator.h"
 
-void export_words_to_file(Word *words, int num_of_words, FILE *file);
+static void export_words_to_file(Word *words, int num_of_words, FILE *file);
 
-void generate_object_file(Word *code_image, Word *data_image, FILE *object_file, int num_of_command_words, int num_of_data_words);
+static void generate_object_file(Word *code_image, Word *data_image, FILE *object_file, int num_of_command_words, int num_of_data_words);
 
-void generate_entries_file(const SymbolTable *relocation_table, SymbolTable *symbol_table, FILE *entry_file);
+static void generate_entries_file(const SymbolTable *relocation_table, SymbolTable *symbol_table, FILE *entry_file);
 
-void generate_externals_file(const SymbolTable *externals_table, FILE *extern_file);
+static void generate_externals_file(const SymbolTable *externals_table, FILE *extern_file);
 
 Bool generate_output_files(char *object_filename, char *entry_filename, char *extern_filename, SymbolTable *relocation_table, SymbolTable *symbol_table, SymbolTable *externals_table, Word *code_image, Word *data_image, int dc, int ic) {
     FILE *object_file, *entry_file, *extern_file;
 
-    int num_of_command_words = ic - MEMORY_OFFSET, i;
+    int num_of_command_words = ic - MEMORY_OFFSET;
     if (count_symbols_by_type(relocation_table, EXTERN)) {
         extern_file = create_file_stream(extern_filename, WRITE_MODE);
         if (extern_file == NULL) return FALSE;
         generate_externals_file(externals_table, extern_file);
+        fclose(extern_file);
 
     }
     if (count_symbols_by_type(relocation_table, ENTRY)) {
         entry_file = create_file_stream(entry_filename, WRITE_MODE);
         if (entry_file == NULL) return FALSE;
         generate_entries_file(relocation_table, symbol_table, entry_file);
+        fclose(entry_file);
     }
     object_file = create_file_stream(object_filename, WRITE_MODE);
     if (object_file == NULL) return FALSE;
@@ -34,7 +36,7 @@ Bool generate_output_files(char *object_filename, char *entry_filename, char *ex
 void generate_externals_file(const SymbolTable *externals_table, FILE *extern_file) {
     int i;
     for (i = 0; i < externals_table->size; i++) {
-        fprintf(extern_file, "%s %d\n", externals_table->symbols[i].name, externals_table->symbols[i].address);
+        fprintf(extern_file, "%s %d\n", externals_table->symbols[i]->name, externals_table->symbols[i]->address);
     }
 }
 
@@ -43,7 +45,7 @@ void generate_entries_file(const SymbolTable *relocation_table, SymbolTable *sym
     Symbol *relocation_symbol;
     Symbol *label_symbol;
     for (i = 0; i < relocation_table->size; i++) {
-        relocation_symbol = &relocation_table->symbols[i];
+        relocation_symbol = relocation_table->symbols[i];
         if (relocation_symbol->type == ENTRY) {
             label_symbol = get_symbol(symbol_table, relocation_symbol->name);
             fprintf(entry_file, "%s %d\n", label_symbol->name, label_symbol->address);

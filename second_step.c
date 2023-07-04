@@ -1,8 +1,11 @@
 #include "util_types.h"
 #include "symbol_table.h"
 
+static Bool rewrite_dynamic_words(AddressingType operand_type, const int *ic, Word *code_image, SymbolTable *labels_table, SymbolTable *relocations_table, SymbolTable *externals_table, ParsedLine *line, int parameter_index);
 
-static Bool rewrite_dynamic_words(AddressingType operand_type, int *ic, Word *code_image, SymbolTable *labels_table, SymbolTable *relocations_table, SymbolTable *externals_table, ParsedLine *line, int parameter_index) {
+static Bool process_line(ParsedLine *line, int *ic, Word *code_image, SymbolTable *labels_table, SymbolTable *relocations_table, SymbolTable *externals_table);
+
+Bool rewrite_dynamic_words(AddressingType operand_type, const int *ic, Word *code_image, SymbolTable *labels_table, SymbolTable *relocations_table, SymbolTable *externals_table, ParsedLine *line, int parameter_index) {
     Bool is_external = FALSE;
     Symbol *label_symbol = NULL;
     Symbol *relocation_symbol = NULL;
@@ -33,23 +36,23 @@ static Bool rewrite_dynamic_words(AddressingType operand_type, int *ic, Word *co
     return TRUE;
 }
 
-static Bool process_line(ParsedLine *line, int *ic, Word *code_image, SymbolTable *labels_table, SymbolTable *relocations_table,SymbolTable *externals_table) {
+Bool process_line(ParsedLine *line, int *ic, Word *code_image, SymbolTable *labels_table, SymbolTable *relocations_table, SymbolTable *externals_table) {
     Bool is_success = TRUE;
     Word *current_word = NULL;
     AddressingType src_operand_type = NO_VALUE;
     AddressingType dest_operand_type = NO_VALUE;
-    if (line->operand == NULL) {
+    if (line->main_operand == NULL) {
         return TRUE;
     }
-    switch (get_instruction_type(line->operand)) {
+    switch (get_instruction_type(line->main_operand)) {
         case (ENTRY):
-            if(get_symbol(labels_table, line->parameters[0]) == NULL){
+            if (get_symbol(labels_table, line->parameters[0]) == NULL) {
+                /* TODO fix bug where comma validations throw this */
                 throw_program_error(line->line_number, join_strings(3, "entry '", line->parameters[0], "' is not defined in this file scope"), line->file_name, TRUE);
                 return FALSE;
             }
             break;
         case (LABEL):
-            /* TODO: validate operand lines are not destroyed */
             throw_program_error(line->line_number, "nested labels are not allowed", line->file_name, FALSE);
             return FALSE;
         case (COMMAND):
@@ -80,7 +83,7 @@ Bool second_step_process(Word code_image[MEMORY_SIZE], SymbolTable *labels_table
     ParsedLine *line = NULL;
     for (i = 0; i < file_operands->size; i++) {
         line = &file_operands->lines[i];
-        CHECK_AND_UPDATE_SUCCESS(is_success, process_line(line, ic, code_image, labels_table, relocations_table,externals_table));
+        CHECK_AND_UPDATE_SUCCESS(is_success, process_line(line, ic, code_image, labels_table, relocations_table, externals_table));
     }
     return is_success;
 }

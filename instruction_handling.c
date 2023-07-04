@@ -1,27 +1,40 @@
 
 #include "error.h"
-#include <malloc.h>
 #include <string.h>
+#include <malloc.h>
+#include <ctype.h>
 #include "instruction_handling.h"
 #include "utils.h"
 
+static Bool instruction_has_destination(InstructionOptions i_options);
 
-Bool handle_instruction_operand(const ParsedLine *line, Word *code_image, int *ic, Opcode *op_num, OpcodeMode *op_mode, char **raw_src_operand, char **raw_dest_operand, AddressingType *src_op, AddressingType *dest_op);
+static Bool instruction_has_source(InstructionOptions i_options);
 
+static Bool is_addressing_types_legal(InstructionOptions i_options, AddressingType src_op, AddressingType dest_op);
 
-Bool handle_parameter_operands(ParsedLine *line, Word *code_image, int *ic, char *raw_src_operand, char *raw_dest_operand, AddressingType src_op, AddressingType dest_op);
+static void build_instruction_options(int src_is_immediate, int src_is_direct, int src_is_register, int dest_is_immediate, int dest_is_direct, int dest_is_register, InstructionOptions *i_options);
 
-void parse_registers_to_word(Word *word, Register src_register, Register dest_register);
+static Bool handle_instruction(const ParsedLine *line, Word *code_image, int *ic, const InstructionCode *i_code, InstructionOptions *i_options, char **raw_src_operand, char **raw_dest_operand, AddressingType *src_op, AddressingType *dest_op);
 
-void parse_operand_to_word(Word *word, Opcode opcode, AddressingType src_op, AddressingType dest_op);
+static Bool handle_parameter_operands(ParsedLine *line, Word *code_image, int *ic, char *raw_src_operand, char *raw_dest_operand, AddressingType src_op, AddressingType dest_op);
 
-AddressingType get_addressing_type(char *operand);
+static void parse_registers_to_word(Word *word, Register src_register, Register dest_register);
 
-void parse_int_to_word(Word *word, int num, Bool add_ARE);
+static void parse_operand_to_word(Word *word, InstructionCode i_code, AddressingType src_op, AddressingType dest_op);
 
-Bool code_word_from_operand(ParsedLine *line, Word *code_image, int *ic, char *raw_operand, AddressingType addressing_type, OperandLocation location);
+static AddressingType get_addressing_type(char *operand);
 
-void set_word_to_zero(Word *word);
+static void parse_int_to_word(Word *word, int num, Bool add_ARE);
+
+static Bool code_word_from_operand(ParsedLine *line, Word *code_image, const int *ic, char *raw_operand, AddressingType addressing_type, OperandContext context);
+
+static void set_word_to_zero(Word *word);
+
+static void code_number_into_word_bits(Word *word, int number, int offset, int length);
+
+static void get_instruction_options(InstructionCode i_code, InstructionOptions *i_options);
+
+static Bool is_legal_string_operand(ParsedLine *line);
 
 void set_word_to_zero(Word *word) {
     int i;
@@ -37,16 +50,16 @@ void parse_symbol_to_word(int symbol_index, Word *word, AddressingMethod address
 
 void parse_registers_to_word(Word *word, Register src_register, Register dest_register) {
     set_word_to_zero(word);
-    code_number_into_word_bits(word, ABSOLUTE_ADDRESSING, 0, 2);
+    code_number_into_word_bits(word, ABSOLUTE_ADDRESSING, ARE_START_INDEX, ARE_END_INDEX);
     code_number_into_word_bits(word, dest_register, 2, 5);
     code_number_into_word_bits(word, src_register, 7, 5);
 }
 
-void parse_operand_to_word(Word *word, Opcode opcode, AddressingType src_op, AddressingType dest_op) {
+void parse_operand_to_word(Word *word, InstructionCode i_code, AddressingType src_op, AddressingType dest_op) {
     set_word_to_zero(word);
-    code_number_into_word_bits(word, ABSOLUTE_ADDRESSING, 0, 2);
+    code_number_into_word_bits(word, ABSOLUTE_ADDRESSING, ARE_START_INDEX, ARE_END_INDEX);
     code_number_into_word_bits(word, dest_op, 2, 3);
-    code_number_into_word_bits(word, opcode, 5, 4);
+    code_number_into_word_bits(word, i_code, 5, 4);
     code_number_into_word_bits(word, src_op, 9, 3);
 }
 
@@ -71,7 +84,6 @@ void parse_int_to_word(Word *word, int num, Bool add_ARE) {
 }
 
 Bool address_data_instruction(ParsedLine *line, Word *data_image, int *dc) {
-    /* TODO: valdiate original line is correctly formatted */
     int i;
     for (i = 0; i < line->parameters_count; i++) {
         parse_int_to_word(&(data_image[*dc]), parse_int(line->parameters[i]), FALSE);
@@ -99,7 +111,6 @@ Bool is_legal_string_operand(ParsedLine *line) {
 Bool address_string_instruction(ParsedLine *line, Word *data_image, int *dc) {
     int i;
     char *string_token = line->parameters[0];
-    /* TODO: valdiate original line is correctly formatted */
     if (!is_legal_string_operand(line)) return FALSE;
     trim_string_quotes(string_token);
     for (i = 0; i < strlen(string_token); i++) {
@@ -111,56 +122,55 @@ Bool address_string_instruction(ParsedLine *line, Word *data_image, int *dc) {
     return TRUE;
 }
 
-/* TODO: make this method not update  ic */
-Bool code_word_from_operand(ParsedLine *line, Word *code_image, int *ic, char *raw_operand, AddressingType const addressing_type, OperandLocation const location) {
+Bool code_word_from_operand(ParsedLine *line, Word *code_image,const int *ic, char *raw_operand, AddressingType const addressing_type, OperandContext const context) {
     Register reg;
     if (addressing_type == IMMEDIATE) {
         parse_int_to_word(code_image + *ic, parse_int(raw_operand), TRUE);
-        (*ic)++;
     } else if (addressing_type == DIRECT) {
         set_word_to_zero(&code_image[*ic]);
-        (*ic)++;
     } else {
         reg = get_register(raw_operand);
         if (reg == INVALID_REGISTER) {
             throw_program_error(line->line_number, join_strings(2, "invalid register: ", raw_operand), line->file_name, TRUE);
             return FALSE;
         }
-        if (location == DESTINATION) {
+        if (context == DESTINATION) {
             parse_registers_to_word(&(code_image[*ic]), 0, reg);
         } else {
             parse_registers_to_word(&(code_image[*ic]), reg, 0);
         }
-        (*ic)++;
     }
     return TRUE;
 }
 
-Bool opcode_has_source(OpcodeMode opcode_mode) {
-    return opcode_mode.src_op.is_direct || opcode_mode.src_op.is_immediate || opcode_mode.src_op.is_register;
+Bool instruction_has_source(InstructionOptions i_options) {
+    return i_options.src_op.is_direct || i_options.src_op.is_immediate || i_options.src_op.is_register;
 }
 
-Bool opcode_has_destination(OpcodeMode opcode_mode) {
-    return opcode_mode.dest_op.is_direct || opcode_mode.dest_op.is_immediate || opcode_mode.dest_op.is_register;
+Bool instruction_has_destination(InstructionOptions i_options) {
+    return i_options.dest_op.is_direct || i_options.dest_op.is_immediate || i_options.dest_op.is_register;
 }
 
 Bool address_code_instruction(ParsedLine *line, Word *code_image, int *ic) {
-    /* TODO:  valdiate original line is correctly formatted */
     char *raw_src_operand = NULL, *raw_dest_operand = NULL;
     AddressingType src_op = {0}, dest_op = {0};
-    OpcodeMode op_mode = {0};
+    InstructionOptions i_options = {0};
+    ParameterMode src_mode = {0}, dest_mode = {0};
+    i_options.src_op = src_mode;
+    i_options.dest_op = dest_mode;
 
-    Opcode op_num = get_opcode(line->operand);
-    if (op_num == INVALID_OPCODE) {
-        throw_program_error(line->line_number, join_strings(2, "invalid instruction: ", line->operand), line->file_name, TRUE);
+
+    InstructionCode op_num = get_instruction_code(line->main_operand);
+    if (op_num == INVALID_INSTRUCTION) {
+        throw_program_error(line->line_number, join_strings(2, "invalid instruction: ", line->main_operand), line->file_name, TRUE);
         return FALSE;
     }
-    op_mode = get_opcode_possible_modes(op_num);
-    if (line->parameters_count != opcode_has_source(op_mode) + opcode_has_destination(op_mode)) {
-        throw_program_error(line->line_number, join_strings(2, "invalid number of operands for instruction: ", line->operand), line->file_name, TRUE);
+    get_instruction_options(op_num, &i_options);
+    if (line->parameters_count != instruction_has_source(i_options) + instruction_has_destination(i_options)) {
+        throw_program_error(line->line_number, join_strings(2, "invalid number of operands for instruction: ", line->main_operand), line->file_name, TRUE);
         return FALSE;
     }
-    if (!handle_instruction_operand(line, code_image, ic, &op_num, &op_mode, &raw_src_operand, &raw_dest_operand, &src_op, &dest_op)) return FALSE;
+    if (!handle_instruction(line, code_image, ic, &op_num, &i_options, &raw_src_operand, &raw_dest_operand, &src_op, &dest_op)) return FALSE;
     if (line->parameters_count == 0) return TRUE;
     if (!handle_parameter_operands(line, code_image, ic, raw_src_operand, raw_dest_operand, src_op, dest_op)) return FALSE;
 
@@ -176,10 +186,13 @@ Bool handle_parameter_operands(ParsedLine *line, Word *code_image, int *ic, char
         } else {
             CHECK_AND_UPDATE_SUCCESS(is_success, code_word_from_operand(line, code_image, ic, raw_src_operand, src_op, SOURCE));
         }
+        (*ic)++;
     } else {
         if (CHECK_AND_UPDATE_SUCCESS(is_success, code_word_from_operand(line, code_image, ic, raw_src_operand, src_op, SOURCE))) {
-            if (!((src_op) == REGISTER && dest_op == REGISTER)) {
+            (*ic)++;
+            if (!(src_op == REGISTER && dest_op == REGISTER)) {
                 CHECK_AND_UPDATE_SUCCESS(is_success, code_word_from_operand(line, code_image, ic, raw_dest_operand, dest_op, DESTINATION));
+                (*ic)++;
             } else {
                 src_register = get_register(raw_src_operand);
                 dest_register = get_register(raw_dest_operand);
@@ -199,28 +212,28 @@ Bool handle_parameter_operands(ParsedLine *line, Word *code_image, int *ic, char
     return is_success;
 }
 
-Bool is_addressing_types_legal(OpcodeMode const opcode_mode, AddressingType const src_op, AddressingType const dest_op) {
-    if (!opcode_mode.src_op.is_direct && src_op == DIRECT) return FALSE;
-    if (!opcode_mode.src_op.is_immediate && src_op == IMMEDIATE) return FALSE;
-    if (!opcode_mode.src_op.is_register && src_op == REGISTER) return FALSE;
-    if (!opcode_mode.dest_op.is_direct && dest_op == DIRECT) return FALSE;
-    if (!opcode_mode.dest_op.is_immediate && dest_op == IMMEDIATE) return FALSE;
-    if (!opcode_mode.dest_op.is_register && dest_op == REGISTER) return FALSE;
+Bool is_addressing_types_legal(InstructionOptions const i_options, AddressingType const src_op, AddressingType const dest_op) {
+    if (!i_options.src_op.is_direct && src_op == DIRECT) return FALSE;
+    if (!i_options.src_op.is_immediate && src_op == IMMEDIATE) return FALSE;
+    if (!i_options.src_op.is_register && src_op == REGISTER) return FALSE;
+    if (!i_options.dest_op.is_direct && dest_op == DIRECT) return FALSE;
+    if (!i_options.dest_op.is_immediate && dest_op == IMMEDIATE) return FALSE;
+    if (!i_options.dest_op.is_register && dest_op == REGISTER) return FALSE;
     return TRUE;
 }
 
-Bool handle_instruction_operand(const ParsedLine *line, Word *code_image, int *ic, Opcode *op_num, OpcodeMode *op_mode, char **raw_src_operand, char **raw_dest_operand, AddressingType *src_op, AddressingType *dest_op) {
+Bool handle_instruction(const ParsedLine *line, Word *code_image, int *ic, const InstructionCode *i_code, InstructionOptions *i_options, char **raw_src_operand, char **raw_dest_operand, AddressingType *src_op, AddressingType *dest_op) {
     if (line->parameters_count == 2) {
         *raw_src_operand = line->parameters[0];
         *raw_dest_operand = line->parameters[1];
         *src_op = get_addressing_type((*raw_src_operand));
         *dest_op = get_addressing_type((*raw_dest_operand));
 
-    } else if (opcode_has_destination((*op_mode))) {
+    } else if (instruction_has_destination((*i_options))) {
         *raw_dest_operand = line->parameters[0];
         *src_op = NO_VALUE;
         *dest_op = get_addressing_type((*raw_dest_operand));
-    } else if (opcode_has_source((*op_mode))) {
+    } else if (instruction_has_source((*i_options))) {
         *raw_src_operand = line->parameters[0];
         *src_op = get_addressing_type((*raw_src_operand));
         *dest_op = NO_VALUE;
@@ -228,18 +241,19 @@ Bool handle_instruction_operand(const ParsedLine *line, Word *code_image, int *i
         *src_op = NO_VALUE;
         *dest_op = NO_VALUE;
     }
-    if (!is_addressing_types_legal((*op_mode), (*src_op), (*dest_op))) {
-        throw_program_error(line->line_number, join_strings(2, "invalid operand type for instruction: ", line->operand), (char *) line->file_name, TRUE);
+    if (!is_addressing_types_legal((*i_options), (*src_op), (*dest_op))) {
+        throw_program_error(line->line_number, join_strings(2, "invalid main_operand type for instruction: ", line->main_operand), (char *) line->file_name, TRUE);
         return FALSE;
     }
-    parse_operand_to_word(code_image + *ic, (*op_num), (*src_op), (*dest_op));
+    parse_operand_to_word(code_image + *ic, (*i_code), (*src_op), (*dest_op));
     (*ic)++;
     return TRUE;
 }
 
 void advance_line_operands(ParsedLine *line) {
     int i = 0;
-    line->operand = line->parameters[0];
+    free(line->main_operand);
+    line->main_operand = line->parameters[0];
     for (i = 0; i < line->parameters_count - 1; i++) {
         line->parameters[i] = line->parameters[i + 1];
     }
@@ -248,25 +262,16 @@ void advance_line_operands(ParsedLine *line) {
 }
 
 InstructionType get_instruction_type(char *instruction) {
-    if (is_empty_line(instruction)) {
-        return EMPTY_LINE;
-    } else if (is_comment(instruction)) {
-        return COMMENT;
-    } else if (is_label(instruction)) {
-        return LABEL;
-    } else if (strcmp(instruction, DATA_DIRECTIVE) == 0) {
-        return DATA;
-    } else if (strcmp(instruction, STRING_DIRECTIVE) == 0) {
-        return STRING;
-    } else if (strcmp(instruction, ENTRY_DIRECTIVE) == 0) {
-        return ENTRY;
-    } else if (strcmp(instruction, EXTERN_DIRECTIVE) == 0) {
-        return EXTERN;
-    } else if (get_opcode(instruction) != INVALID_OPCODE) {
-        return COMMAND;
-    } else {
-        return UNKNOWN;
-    }
+    if (is_empty_line(instruction)) return EMPTY_LINE;
+    else if (is_comment(instruction)) return COMMENT;
+    else if (is_label(instruction)) return LABEL;
+    else if (strcmp(instruction, DATA_DIRECTIVE) == 0) return DATA;
+    else if (strcmp(instruction, STRING_DIRECTIVE) == 0) return STRING;
+    else if (strcmp(instruction, ENTRY_DIRECTIVE) == 0) return ENTRY;
+    else if (strcmp(instruction, EXTERN_DIRECTIVE) == 0) return EXTERN;
+    else if (get_instruction_code(instruction) != INVALID_INSTRUCTION) return COMMAND;
+    else return UNKNOWN;
+
 }
 
 void code_number_into_word_bits(Word *word, int number, int offset, int length) {
@@ -280,29 +285,24 @@ void code_number_into_word_bits(Word *word, int number, int offset, int length) 
     }
 }
 
-void build_opcode_mode(int src_is_immediate, int src_is_direct, int src_is_register, int dest_is_immediate, int dest_is_direct, int dest_is_register, OpcodeMode *opcode_mode) {
-    opcode_mode->src_op.is_register = src_is_register;
-    opcode_mode->src_op.is_direct = src_is_direct;
-    opcode_mode->src_op.is_immediate = src_is_immediate;
-    opcode_mode->dest_op.is_register = dest_is_register;
-    opcode_mode->dest_op.is_direct = dest_is_direct;
-    opcode_mode->dest_op.is_immediate = dest_is_immediate;
+void build_instruction_options(int src_is_immediate, int src_is_direct, int src_is_register, int dest_is_immediate, int dest_is_direct, int dest_is_register, InstructionOptions *i_options) {
+    i_options->src_op.is_register = src_is_register;
+    i_options->src_op.is_direct = src_is_direct;
+    i_options->src_op.is_immediate = src_is_immediate;
+    i_options->dest_op.is_register = dest_is_register;
+    i_options->dest_op.is_direct = dest_is_direct;
+    i_options->dest_op.is_immediate = dest_is_immediate;
 }
 
-OpcodeMode get_opcode_possible_modes(Opcode opcode) {
-    OpcodeMode opcode_mode = {0};
-    ParameterMode src_mode = {0};
-    ParameterMode dest_mode = {0};
-    opcode_mode.src_op = src_mode;
-    opcode_mode.dest_op = dest_mode;
-    switch (opcode) {
+void get_instruction_options(InstructionCode i_code, InstructionOptions *i_options) {
+    switch (i_code) {
         case MOV:
         case ADD:
         case SUB:
-            build_opcode_mode(TRUE, TRUE, TRUE, FALSE, TRUE, TRUE, &opcode_mode);
+            build_instruction_options(TRUE, TRUE, TRUE, FALSE, TRUE, TRUE, i_options);
             break;
         case CMP:
-            build_opcode_mode(TRUE, TRUE, TRUE, TRUE, TRUE, TRUE, &opcode_mode);
+            build_instruction_options(TRUE, TRUE, TRUE, TRUE, TRUE, TRUE, i_options);
             break;
         case NOT:
         case CLR:
@@ -312,25 +312,63 @@ OpcodeMode get_opcode_possible_modes(Opcode opcode) {
         case BNE:
         case RED:
         case JSR:
-            build_opcode_mode(FALSE, FALSE, FALSE, FALSE, TRUE, TRUE, &opcode_mode);
+            build_instruction_options(FALSE, FALSE, FALSE, FALSE, TRUE, TRUE, i_options);
             break;
         case LEA:
-            build_opcode_mode(FALSE, TRUE, FALSE, FALSE, TRUE, TRUE, &opcode_mode);
+            build_instruction_options(FALSE, TRUE, FALSE, FALSE, TRUE, TRUE, i_options);
             break;
         case PRN:
-            build_opcode_mode(FALSE, FALSE, FALSE, TRUE, TRUE, TRUE, &opcode_mode);
+            build_instruction_options(FALSE, FALSE, FALSE, TRUE, TRUE, TRUE, i_options);
             break;
         case RTS:
         case STOP:
-            build_opcode_mode(FALSE, FALSE, FALSE, FALSE, FALSE, FALSE, &opcode_mode);
+            build_instruction_options(FALSE, FALSE, FALSE, FALSE, FALSE, FALSE, i_options);
             break;
         default:
-            build_opcode_mode(FALSE, FALSE, FALSE, FALSE, FALSE, FALSE, &opcode_mode);
+            build_instruction_options(FALSE, FALSE, FALSE, FALSE, FALSE, FALSE, i_options);
     }
-    return opcode_mode;
 }
 
 void get_word_addressing_types(Word *word, AddressingType *src, AddressingType *dest) {
     *src = (AddressingType) (word->bits[9] + (word->bits[10] << 1) + (word->bits[11] << 2));
     *dest = (AddressingType) (word->bits[2] + (word->bits[3] << 1) + (word->bits[4] << 2));
+}
+
+Bool is_valid_commas(char *line, char *error_message) {
+    int len = strlen(line);
+    int token_count = 0, i = 0;
+    Bool is_previous_char_comma = FALSE;
+
+    for (i = 0; i < len; i++) {
+        while (!isspace(line[i]) && line[i] != ',') {
+            is_previous_char_comma = FALSE;
+            if(i<len-1){
+                i++;
+            } else {
+                break;
+            }
+        };
+        if (i> 0 && line[i - 1] != ':') {
+            token_count++;
+        }
+        if (isspace(line[i])) continue;
+        if (line[i] == ',') {
+            if (token_count <= 1) {
+                strcpy(error_message, "misplaced comma before the first parameter");
+                return FALSE;
+            };
+            if (is_previous_char_comma) {
+                strcpy(error_message, "multiple consecutive commas");
+                return FALSE;
+            };
+            is_previous_char_comma = TRUE;
+        } else {
+            is_previous_char_comma = FALSE;
+        }
+    }
+    if(is_previous_char_comma) {
+        strcpy(error_message, "misplaced comma after the last parameter");
+        return FALSE;
+    }
+    return TRUE;
 }

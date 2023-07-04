@@ -1,3 +1,4 @@
+#pragma once
 #include "util_types.h"
 #include "symbol_table.h"
 

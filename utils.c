@@ -1,19 +1,30 @@
-#include <malloc.h>
 #include <string.h>
 #include <stdarg.h>
 #include "utils.h"
 #include "instruction_handling.h"
 #include "error.h"
+#include "memory_wrappers.h"
 
-char *string_array_to_string(char **array, int size) {
+char base64_encode(unsigned int value);
+
+/* TODO: make this work with existing join string */
+char *join_string_array(char **array, int size) {
     int i;
-    char *string = malloc(sizeof(char));
-    string[0] = '\0';
+    char *string = (char *) safe_malloc(sizeof(char));
+    string[0] = NULL_CHAR;
     for (i = 0; i < size; i++) {
-        string = realloc(string, (strlen(string) + strlen(array[i]) + 1) * sizeof(char));
+        string = (char *) safe_realloc(string, (strlen(string) + strlen(array[i]) + 1) * sizeof(char));
         strcat(string, array[i]);
     }
     return string;
+}
+
+Bool is_string_equals(const char *line, const char *directive) {
+    if (line == NULL || directive == NULL) {
+        return FALSE;
+    }
+
+    return !strcmp(line, directive);
 }
 
 char *duplicate_string(const char *str) {
@@ -22,11 +33,7 @@ char *duplicate_string(const char *str) {
         return NULL;
     }
 
-    duplicate = malloc(strlen(str) + 1);
-
-    if (duplicate == NULL) {
-        return NULL;
-    }
+    duplicate = (char *) safe_malloc(strlen(str) + 1);
 
     strcpy(duplicate, str);
     return duplicate;
@@ -46,7 +53,7 @@ Bool is_integer(char *str) {
     return TRUE;
 }
 
-Bool is_comment(char *instruction) {
+Bool is_comment(const char *instruction) {
     return instruction[0] == COMMENT_PREFIX;
 }
 
@@ -61,7 +68,7 @@ Bool is_empty_line(char *line) {
 }
 
 /* TODO: clean this */
-Opcode get_opcode(char *command) {
+InstructionCode get_instruction_code(char *command) {
     if (strcmp(command, MOV_COMMAND) == 0) {
         return MOV;
     } else if (strcmp(command, CMP_COMMAND) == 0) {
@@ -94,7 +101,7 @@ Opcode get_opcode(char *command) {
         return RTS;
     else if (strcmp(command, STOP_COMMAND) == 0)
         return STOP;
-    return INVALID_OPCODE;
+    return INVALID_INSTRUCTION;
 }
 
 Register get_register(char *operand) {
@@ -127,7 +134,7 @@ Register get_register(char *operand) {
     }
 }
 
-Bool is_register(char *operand) {
+Bool is_register(const char *operand) {
     if (operand[0] == REGISTER_PREFIX) {
         return TRUE;
     }
@@ -138,17 +145,16 @@ Bool is_label(char *instruction) {
     return instruction[strlen(instruction) - 1] == LABEL_TERMINATOR;
 }
 
-/* TODO: report error */
+/* TODO: report error for numbers too large */
 int parse_int(char *str) {
     int num;
     sscanf(str, "%d", &num);
     return num;
 }
 
-/* TODO: free memory */
 char *join_strings(int num_strings, ...) {
     va_list args;
-    int total_length = 0;
+    unsigned int total_length = 0;
     char *result, *current;
     int i;
 
@@ -159,11 +165,7 @@ char *join_strings(int num_strings, ...) {
     }
     va_end(args);
 
-    result = (char *) malloc((total_length + 1) * sizeof(char));
-    if (result == NULL) {
-        fprintf(stderr, "Memory allocation failed\n");
-        return NULL;
-    }
+    result = (char *) safe_malloc((total_length + 1) * sizeof(char));
 
     va_start(args, num_strings);
     result[0] = '\0';
@@ -184,7 +186,7 @@ void trim_string_quotes(char *str) {
     str[strlen(str) - 1] = '\0';
 }
 
-char base64_encode(int value) {
+char base64_encode(unsigned int value) {
     if (value < 26) {
         return 'A' + value;
     } else if (value < 52) {
@@ -199,8 +201,8 @@ char base64_encode(int value) {
 }
 
 void word_to_base64(Word *word, char *base64) {
-    int first6Bits = 0;
-    int second6Bits = 0;
+    unsigned int first6Bits = 0;
+    unsigned int second6Bits = 0;
     int i;
 
     for (i = 5; i >= 0; i--) {
@@ -216,4 +218,23 @@ void word_to_base64(Word *word, char *base64) {
     base64[1] = base64_encode(first6Bits);
 
     base64[2] = NULL_CHAR;
+}
+
+void clean_crlf(char *str) {
+    int i;
+    if(str == NULL){
+        return;
+    }
+    for (i = 0; i < strlen(str); i++) {
+        if (str[i] == '\n' || str[i] == WINDOWS_CRLF || str[i] == LINUX_CRLF) {
+            str[i] = '\0';
+        }
+    }
+}
+
+void add_null_char(char *str) {
+    if(str == NULL){
+        return;
+    }
+    str[strlen(str)] = '\0';
 }
