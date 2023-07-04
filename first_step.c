@@ -1,7 +1,9 @@
 #include <string.h>
+#include <malloc.h>
 #include "first_step.h"
 #include "instruction_handling.h"
 #include "error.h"
+#include "memory_wrappers.h"
 
 static Bool handle_line(SymbolTable *labels_table, SymbolTable *relocations_table, ParsedLine *line, Word *data_image, Word *code_image, int *ic, int *dc);
 
@@ -120,19 +122,25 @@ Bool handle_line(SymbolTable *labels_table, SymbolTable *relocations_table, Pars
 }
 
 
-Bool first_step_process(Word data_image[MEMORY_SIZE], Word code_image[MEMORY_SIZE], SymbolTable *labels_table, SymbolTable *relocations_table, FileOperands **file_operands, char *file_name, int *ic, int *dc) {
+Bool first_step_process(Word data_image[MEMORY_SIZE], Word code_image[MEMORY_SIZE], SymbolTable *labels_table, SymbolTable *relocations_table, char *file_name, int *ic, int *dc) {
     Bool is_success = TRUE;
-    int i;
-    ParsedLine *current_line;
+    int lines_count = 1;
+    ParsedLine current_line = {0};
+    char line[MAX_LINE_LENGTH] = {0},tmp_line[MAX_LINE_LENGTH] = {0};
     FILE *file = create_file_stream(file_name, "r");
     if (file == NULL) {
         return FALSE;
     }
-    (*file_operands) = parse_lines_from_file(file, file_name);
-    for (i = 0; i < (*file_operands)->size; i++) {
-        current_line = &((*file_operands)->lines[i]);
-        current_line->line_number = i + 1;
-        CHECK_AND_UPDATE_SUCCESS(is_success, handle_line(labels_table, relocations_table, current_line, data_image, code_image, ic, dc));
+    /* TODO: validate not infinite loop */
+    while (fgets(line, MAX_LINE_LENGTH, file) != NULL) {
+        strcpy(tmp_line, line);
+        parse_line(tmp_line, &current_line);
+        /*resize lines if needed*/
+        current_line.line_number = lines_count;
+        strcpy(current_line.file_name, file_name);
+        CHECK_AND_UPDATE_SUCCESS(is_success, handle_line(labels_table, relocations_table, &current_line, data_image, code_image, ic, dc));
+        lines_count++;
+        free_parsed_line(&current_line);
     }
     add_ic_to_all_data_addresses(labels_table, *ic);
 

@@ -17,7 +17,6 @@ void process_single_file(char* base_filename){
     char as_filename[MAX_FILENAME_LENGTH] = {0}, am_filename[MAX_FILENAME_LENGTH] = {0}, ob_filename[MAX_FILENAME_LENGTH] = {0}, ext_filename[MAX_FILENAME_LENGTH] = {0}, ent_filename[MAX_FILENAME_LENGTH] = {0};
     Word data_image[MEMORY_SIZE] = {0},code_image[MEMORY_SIZE] = {0};
     SymbolTable *label_symbol_table = NULL,*relocations_symbol_table = NULL,*externals_symbol_table = NULL;
-    FileOperands *file_operands = NULL;
     build_filenames(base_filename, as_filename, am_filename, ob_filename, ext_filename, ent_filename);
     printf("Opening File: %s\n", as_filename);
     if (!expand_file_macros(as_filename, am_filename)) {
@@ -26,10 +25,10 @@ void process_single_file(char* base_filename){
     }
     label_symbol_table = create_symbol_table();
     relocations_symbol_table = create_symbol_table();
-    CHECK_AND_UPDATE_SUCCESS(is_success,first_step_process(data_image, code_image, label_symbol_table, relocations_symbol_table, &file_operands, am_filename, &ic, &dc));
+    CHECK_AND_UPDATE_SUCCESS(is_success,first_step_process(data_image, code_image, label_symbol_table, relocations_symbol_table,  am_filename, &ic, &dc));
     externals_symbol_table = create_symbol_table();
     ic = MEMORY_OFFSET;
-    if(CHECK_AND_UPDATE_SUCCESS(is_success,second_step_process(code_image, label_symbol_table, relocations_symbol_table, externals_symbol_table, file_operands, &ic))){
+    if(CHECK_AND_UPDATE_SUCCESS(is_success,second_step_process(code_image, label_symbol_table, relocations_symbol_table, externals_symbol_table, am_filename, &ic))){
         CHECK_AND_UPDATE_SUCCESS(is_success, generate_output_files(ob_filename, ent_filename, ext_filename, relocations_symbol_table, label_symbol_table, externals_symbol_table, (Word *) &code_image, data_image, dc, ic));
     }
     if(is_success){
@@ -40,7 +39,7 @@ void process_single_file(char* base_filename){
     free_symbol_table(label_symbol_table);
     free_symbol_table(relocations_symbol_table);
     free_symbol_table(externals_symbol_table);
-    free_file_operands(file_operands);
+    /* TODO: remove: free_file_operands(file_operands); */
 }
 
 void build_filenames(char *base_name, char *as_filename, char *am_filename, char *ob_filename, char *ext_filename,char *ent_filename){

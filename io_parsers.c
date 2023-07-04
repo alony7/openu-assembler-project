@@ -5,11 +5,6 @@
 #include "consts.h"
 #include "memory_wrappers.h"
 
-static void parse_line(char *line, ParsedLine *parsed_line);
-
-static void free_parsed_line(ParsedLine *line);
-
-static FileOperands *create_file_operands();
 
 FILE *create_file_stream(char *file_name, char *mode) {
     FILE *file = fopen(file_name, mode);
@@ -59,41 +54,6 @@ void parse_line(char *line, ParsedLine *parsed_line) {
     }
 }
 
-FileOperands *create_file_operands() {
-    FileOperands *file_operands = (FileOperands *) safe_malloc(sizeof(FileOperands));
-    file_operands->size = 0;
-    file_operands->lines = NULL;
-    return file_operands;
-}
-
-/*TODO: explain the exercise allowed max lines, and maybe add limit */
-FileOperands *parse_lines_from_file(FILE *file_stream, char *file_name) {
-    FileOperands *file_operands = create_file_operands();
-    ParsedLine *lines = (ParsedLine *) safe_malloc(BASE_LINE_BATCH_SIZE * sizeof(ParsedLine));
-    ParsedLine *current_line;
-    char line[MAX_LINE_LENGTH] = {0};
-    char tmp_line[MAX_LINE_LENGTH] = {0};
-    int lines_count = 0;
-    int lines_capacity = BASE_LINE_BATCH_SIZE;
-    while (fgets(line, MAX_LINE_LENGTH, file_stream) != NULL) {
-        if (lines_count == lines_capacity) {
-            lines_capacity += BASE_LINE_BATCH_SIZE;
-            lines = (ParsedLine *) safe_realloc(lines, lines_capacity * sizeof(ParsedLine));
-        }
-        current_line = lines + lines_count;
-        strcpy(tmp_line, line);
-
-        parse_line(tmp_line, current_line);
-        /*resize lines if needed*/
-        current_line->line_number = lines_count;
-        strcpy(current_line->file_name, file_name);
-        lines_count++;
-    }
-    file_operands->lines = lines;
-    file_operands->size = lines_count;
-    return file_operands;
-}
-
 
 void free_parsed_line(ParsedLine *line) {
     int i;
@@ -104,14 +64,6 @@ void free_parsed_line(ParsedLine *line) {
     free(line->parameters);
 }
 
-void free_file_operands(FileOperands *file_operands) {
-    int i;
-    for (i = 0; i < file_operands->size; i++) {
-        free_parsed_line(file_operands->lines + i);
-    }
-    free(file_operands->lines);
-    free(file_operands);
-}
 
 void build_output_filename(char *base_name, char *suffix, char *output_buffer) {
     strcpy(output_buffer, base_name);
