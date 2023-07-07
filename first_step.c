@@ -100,6 +100,7 @@ Bool handle_line(SymbolTable *labels_table, SymbolTable *relocations_table, Pars
             break;
         case (LABEL):
             throw_program_error(line->line_number, "nested labels are not allowed", line->file_name, FALSE);
+            return FALSE;
         case (EXTERN):
             if (get_symbol(relocations_table, line->parameters[0]) != NULL) {
                 throw_program_error(line->line_number, join_strings(3, "label '", line->parameters[0], "' is already declared as entry or extern"), line->file_name, TRUE);

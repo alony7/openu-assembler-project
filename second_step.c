@@ -42,22 +42,24 @@ Bool process_line(ParsedLine *line, int *ic, Word *code_image, SymbolTable *labe
     Word *current_word = NULL;
     AddressingType src_operand_type = NO_VALUE;
     AddressingType dest_operand_type = NO_VALUE;
+    /* if the line is empty, skip it */
     if (line->main_operand == NULL) {
         return TRUE;
     }
     switch (get_instruction_type(line->main_operand)) {
         case (ENTRY):
+            /* check if the label is defined in this file scope */
             if (get_symbol(labels_table, line->parameters[0]) == NULL) {
                 throw_program_error(line->line_number, join_strings(3, "entry '", line->parameters[0], "' is not defined in this file scope"), line->file_name, TRUE);
                 return FALSE;
             }
             break;
         case (LABEL):
+            /* examine the next word to determine the addressing types */
             advance_line_operands(line);
+            /* process the label's code */
             process_line(line, ic, code_image, labels_table, relocations_table, externals_table);
             break;
-            throw_program_error(line->line_number, "nested labels are not allowed", line->file_name, FALSE);
-            return FALSE;
         case (COMMAND):
 
             current_word = &code_image[*ic];
@@ -87,15 +89,17 @@ Bool second_step_process(Word code_image[MEMORY_SIZE], SymbolTable *labels_table
     FILE *file = create_file_stream(file_name, "r");
     char line[MAX_LINE_LENGTH] = {0},tmp_line[MAX_LINE_LENGTH] = {0};
     while (fgets(line, MAX_LINE_LENGTH, file) != NULL) {
+        /* skip lines that are in error list */
         if(is_line_in_error_list(errors,lines_count)){
             lines_count++;
             continue;
         }
+        /* parse line */
         strcpy(tmp_line, line);
         parse_line(tmp_line, &parsed_line);
-        /*resize lines if needed*/
         parsed_line.line_number = lines_count;
         strcpy(parsed_line.file_name, file_name);
+        /* process line */
         CHECK_AND_UPDATE_SUCCESS(is_success, process_line(&parsed_line, ic, code_image, labels_table, relocations_table, externals_table));
         lines_count++;
         free_parsed_line(&parsed_line);

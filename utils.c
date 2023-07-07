@@ -248,5 +248,5 @@ void add_null_char(char *str) {
 
 Bool is_memory_exceeded(int ic, int dc) {
     /* check if the memory is exceeded */
-    return ic + dc >= MEMORY_SIZE - MEMORY_OFFSET;
+    return ic + dc >= MEMORY_SIZE ;
 }
