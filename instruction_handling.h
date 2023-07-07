@@ -109,4 +109,4 @@ void get_word_addressing_types(Word *word, AddressingType *src, AddressingType *
 
 void parse_symbol_to_word(int symbol_index, Word *word, AddressingMethod addressing_method);
 
-Bool is_valid_commas(char *line, char *error_message);
+Bool is_valid_commas(char *line, char *error_message, int non_parameter_tokens_count);

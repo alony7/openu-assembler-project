@@ -13,16 +13,13 @@ typedef struct ParsedLine {
     int parameters_count;
 } ParsedLine;
 
-typedef struct FileOperands {
-    ParsedLine *lines;
-    int size;
-} FileOperands;
 
 FILE *create_file_stream(char *file_name, char *mode);
 
-FileOperands *parse_lines_from_file(FILE *file_stream, char *file_name);
 
-void free_file_operands(FileOperands *file_operands);
 
 void build_output_filename(char *base_name, char *suffix, char *output_buffer);
 
+void parse_line(char *line, ParsedLine *parsed_line);
+
+void free_parsed_line(ParsedLine *line);

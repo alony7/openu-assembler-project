@@ -1,6 +1,6 @@
+#pragma once
 #include "consts.h"
 #include "utils.h"
-#pragma once
 
 
 MacroTable *create_macro_table();

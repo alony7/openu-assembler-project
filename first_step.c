@@ -1,7 +1,9 @@
 #include <string.h>
+#include <malloc.h>
 #include "first_step.h"
 #include "instruction_handling.h"
 #include "error.h"
+#include "memory_wrappers.h"
 
 static Bool handle_line(SymbolTable *labels_table, SymbolTable *relocations_table, ParsedLine *line, Word *data_image, Word *code_image, int *ic, int *dc);
 
@@ -25,6 +27,10 @@ Bool parse_label(ParsedLine *line, SymbolTable *labels_table, SymbolTable *reloc
     Symbol *symbol = NULL;
     InstructionType label_instruction_type;
     line->main_operand[strlen(line->main_operand) - 1] = NULL_CHAR;
+    if(get_instruction_code(line->main_operand) != INVALID_INSTRUCTION) {
+        throw_program_error(line->line_number, join_strings(2, "illegal label name: ", line->main_operand), line->file_name, TRUE);
+        return FALSE;
+    }
     if (line->parameters_count == 0) {
         throw_program_error(line->line_number, "empty label", line->file_name, FALSE);
         return FALSE;
@@ -63,15 +69,24 @@ Bool handle_line(SymbolTable *labels_table, SymbolTable *relocations_table, Pars
     Symbol *symbol;
     char *validation_error[MAX_ERROR_LENGTH];
     Bool is_success = TRUE;
+    Bool instruction_is_label = FALSE;
     InstructionType instruction_type;
     if (line->main_operand == NULL) {
         return TRUE;
     }
     instruction_type = get_instruction_type(line->main_operand);
     if (instruction_type == LABEL) {
+        instruction_is_label = TRUE;
         if (!parse_label(line, labels_table, relocations_table, ic, dc, &instruction_type)) {
             return FALSE;
         }
+    }
+    if(instruction_type == COMMENT || instruction_type == EMPTY_LINE) {
+        return TRUE;
+    }
+    if(!is_valid_commas(line->original_line, (char *) validation_error,instruction_is_label?2:1)) {
+        throw_program_error(line->line_number, (char *) validation_error, line->file_name, FALSE);
+        return FALSE;
     }
     switch (instruction_type) {
         case (COMMENT):
@@ -112,31 +127,50 @@ Bool handle_line(SymbolTable *labels_table, SymbolTable *relocations_table, Pars
             throw_program_error(line->line_number, join_strings(2, "invalid instruction: ", line->main_operand), line->file_name, TRUE);
             return FALSE;
     }
-    if(!is_valid_commas(line->original_line, (char *) validation_error)) {
-        throw_program_error(line->line_number, (char *) validation_error, line->file_name, FALSE);
-        return FALSE;
-    }
+
     return is_success;
 }
 
 
-Bool first_step_process(Word data_image[MEMORY_SIZE], Word code_image[MEMORY_SIZE], SymbolTable *labels_table, SymbolTable *relocations_table, FileOperands **file_operands, char *file_name, int *ic, int *dc) {
-    Bool is_success = TRUE;
-    int i;
-    ParsedLine *current_line;
+Bool first_step_process(Word data_image[MEMORY_SIZE], Word code_image[MEMORY_SIZE], SymbolTable *labels_table, SymbolTable *relocations_table, ErrorList *errors,char *file_name, int *ic, int *dc,Bool *should_second_step) {
+    Bool is_file_success = TRUE;
+    Bool is_line_success;
+    int lines_count = 1;
+    ParsedLine current_line = {0};
+    char line[MAX_LINE_LENGTH] = {0},tmp_line[MAX_LINE_LENGTH] = {0};
     FILE *file = create_file_stream(file_name, "r");
     if (file == NULL) {
         return FALSE;
     }
-    (*file_operands) = parse_lines_from_file(file, file_name);
-    for (i = 0; i < (*file_operands)->size; i++) {
-        current_line = &((*file_operands)->lines[i]);
-        current_line->line_number = i + 1;
-        CHECK_AND_UPDATE_SUCCESS(is_success, handle_line(labels_table, relocations_table, current_line, data_image, code_image, ic, dc));
+    while (fgets(line, MAX_LINE_LENGTH, file) != NULL) {
+        is_line_success = TRUE;
+        if(is_memory_exceeded(*ic, *dc)) {
+            throw_program_error(lines_count, "maximum memory size exceeded for current file" ,file_name, FALSE);
+            (*should_second_step) = FALSE;
+            add_error_line(errors, lines_count);
+            return FALSE;
+        }
+        if (line[strlen(line) - 1] != '\n' && !feof(file)) {
+            throw_program_error(lines_count, "line is too long", file_name, FALSE);
+            (*should_second_step) = FALSE;
+            add_error_line(errors, lines_count);
+            return FALSE;
+        }
+        strcpy(tmp_line, line);
+        parse_line(tmp_line, &current_line);
+        current_line.line_number = lines_count;
+        strcpy(current_line.file_name, file_name);
+        is_line_success = handle_line(labels_table, relocations_table, &current_line, data_image, code_image, ic, dc);
+        if(!is_line_success) {
+            add_error_line(errors, lines_count);
+        }
+        CHECK_AND_UPDATE_SUCCESS(is_file_success, is_line_success);
+        lines_count++;
+        free_parsed_line(&current_line);
     }
     add_ic_to_all_data_addresses(labels_table, *ic);
 
     fclose(file);
-    return is_success;
+    return is_file_success;
 }
 

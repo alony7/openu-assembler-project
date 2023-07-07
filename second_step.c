@@ -1,3 +1,4 @@
+#include <string.h>
 #include "util_types.h"
 #include "symbol_table.h"
 
@@ -47,12 +48,14 @@ Bool process_line(ParsedLine *line, int *ic, Word *code_image, SymbolTable *labe
     switch (get_instruction_type(line->main_operand)) {
         case (ENTRY):
             if (get_symbol(labels_table, line->parameters[0]) == NULL) {
-                /* TODO fix bug where comma validations throw this */
                 throw_program_error(line->line_number, join_strings(3, "entry '", line->parameters[0], "' is not defined in this file scope"), line->file_name, TRUE);
                 return FALSE;
             }
             break;
         case (LABEL):
+            advance_line_operands(line);
+            process_line(line, ic, code_image, labels_table, relocations_table, externals_table);
+            break;
             throw_program_error(line->line_number, "nested labels are not allowed", line->file_name, FALSE);
             return FALSE;
         case (COMMAND):
@@ -77,13 +80,26 @@ Bool process_line(ParsedLine *line, int *ic, Word *code_image, SymbolTable *labe
     return is_success;
 }
 
-Bool second_step_process(Word code_image[MEMORY_SIZE], SymbolTable *labels_table, SymbolTable *relocations_table, SymbolTable *externals_table, FileOperands *file_operands, int *ic) {
+Bool second_step_process(Word code_image[MEMORY_SIZE], SymbolTable *labels_table, SymbolTable *relocations_table, SymbolTable *externals_table,ErrorList *errors,char *file_name, int *ic) {
     Bool is_success = TRUE;
-    int i = 0;
-    ParsedLine *line = NULL;
-    for (i = 0; i < file_operands->size; i++) {
-        line = &file_operands->lines[i];
-        CHECK_AND_UPDATE_SUCCESS(is_success, process_line(line, ic, code_image, labels_table, relocations_table, externals_table));
+    int i = 0,lines_count = 1;
+    ParsedLine parsed_line = {0};
+    FILE *file = create_file_stream(file_name, "r");
+    char line[MAX_LINE_LENGTH] = {0},tmp_line[MAX_LINE_LENGTH] = {0};
+    while (fgets(line, MAX_LINE_LENGTH, file) != NULL) {
+        if(is_line_in_error_list(errors,lines_count)){
+            lines_count++;
+            continue;
+        }
+        strcpy(tmp_line, line);
+        parse_line(tmp_line, &parsed_line);
+        /*resize lines if needed*/
+        parsed_line.line_number = lines_count;
+        strcpy(parsed_line.file_name, file_name);
+        CHECK_AND_UPDATE_SUCCESS(is_success, process_line(&parsed_line, ic, code_image, labels_table, relocations_table, externals_table));
+        lines_count++;
+        free_parsed_line(&parsed_line);
     }
+    fclose(file);
     return is_success;
 }
