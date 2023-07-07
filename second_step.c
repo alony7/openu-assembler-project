@@ -81,13 +81,17 @@ Bool process_line(ParsedLine *line, int *ic, Word *code_image, SymbolTable *labe
     return is_success;
 }
 
-Bool second_step_process(Word code_image[MEMORY_SIZE], SymbolTable *labels_table, SymbolTable *relocations_table, SymbolTable *externals_table, char *file_name, int *ic) {
+Bool second_step_process(Word code_image[MEMORY_SIZE], SymbolTable *labels_table, SymbolTable *relocations_table, SymbolTable *externals_table,ErrorList *errors,char *file_name, int *ic) {
     Bool is_success = TRUE;
     int i = 0,lines_count = 1;
     ParsedLine parsed_line = {0};
     FILE *file = create_file_stream(file_name, "r");
     char line[MAX_LINE_LENGTH] = {0},tmp_line[MAX_LINE_LENGTH] = {0};
     while (fgets(line, MAX_LINE_LENGTH, file) != NULL) {
+        if(is_line_in_error_list(errors,lines_count)){
+            lines_count++;
+            continue;
+        }
         strcpy(tmp_line, line);
         parse_line(tmp_line, &parsed_line);
         /*resize lines if needed*/

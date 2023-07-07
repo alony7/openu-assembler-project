@@ -128,8 +128,9 @@ Bool handle_line(SymbolTable *labels_table, SymbolTable *relocations_table, Pars
 }
 
 
-Bool first_step_process(Word data_image[MEMORY_SIZE], Word code_image[MEMORY_SIZE], SymbolTable *labels_table, SymbolTable *relocations_table, char *file_name, int *ic, int *dc,Bool *should_second_step) {
-    Bool is_success = TRUE;
+Bool first_step_process(Word data_image[MEMORY_SIZE], Word code_image[MEMORY_SIZE], SymbolTable *labels_table, SymbolTable *relocations_table, ErrorList *errors,char *file_name, int *ic, int *dc,Bool *should_second_step) {
+    Bool is_file_success = TRUE;
+    Bool is_line_success;
     int lines_count = 1;
     ParsedLine current_line = {0};
     char line[MAX_LINE_LENGTH] = {0},tmp_line[MAX_LINE_LENGTH] = {0};
@@ -138,27 +139,34 @@ Bool first_step_process(Word data_image[MEMORY_SIZE], Word code_image[MEMORY_SIZ
         return FALSE;
     }
     while (fgets(line, MAX_LINE_LENGTH, file) != NULL) {
+        is_line_success = TRUE;
         if(is_memory_exceeded(*ic, *dc)) {
             throw_program_error(lines_count, "maximum memory size exceeded for current file" ,file_name, FALSE);
             (*should_second_step) = FALSE;
+            add_error_line(errors, lines_count);
             return FALSE;
         }
         if (line[strlen(line) - 1] != '\n' && !feof(file)) {
             throw_program_error(lines_count, "line is too long", file_name, FALSE);
             (*should_second_step) = FALSE;
+            add_error_line(errors, lines_count);
             return FALSE;
         }
         strcpy(tmp_line, line);
         parse_line(tmp_line, &current_line);
         current_line.line_number = lines_count;
         strcpy(current_line.file_name, file_name);
-        CHECK_AND_UPDATE_SUCCESS(is_success, handle_line(labels_table, relocations_table, &current_line, data_image, code_image, ic, dc));
+        is_line_success = handle_line(labels_table, relocations_table, &current_line, data_image, code_image, ic, dc);
+        if(!is_line_success) {
+            add_error_line(errors, lines_count);
+        }
+        CHECK_AND_UPDATE_SUCCESS(is_file_success, is_line_success);
         lines_count++;
         free_parsed_line(&current_line);
     }
     add_ic_to_all_data_addresses(labels_table, *ic);
 
     fclose(file);
-    return is_success;
+    return is_file_success;
 }
 
