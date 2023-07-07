@@ -26,6 +26,8 @@ Bool is_register(const char *operand);
 
 Bool is_label(char *operand);
 
+Bool is_memory_exceeded(int ic,int dc);
+
 int parse_int(char *str);
 
 char *join_strings(int num_strings, ...);

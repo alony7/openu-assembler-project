@@ -27,11 +27,16 @@ Bool parse_label(ParsedLine *line, SymbolTable *labels_table, SymbolTable *reloc
     Symbol *symbol = NULL;
     InstructionType label_instruction_type;
     line->main_operand[strlen(line->main_operand) - 1] = NULL_CHAR;
+    if(get_instruction_code(line->main_operand) != INVALID_INSTRUCTION) {
+        throw_program_error(line->line_number, join_strings(2, "illegal label name: ", line->main_operand), line->file_name, TRUE);
+        return FALSE;
+    }
     if (line->parameters_count == 0) {
         throw_program_error(line->line_number, "empty label", line->file_name, FALSE);
         return FALSE;
     }
     if (get_symbol(labels_table, line->main_operand) != NULL) {
+        /* TODO: this is errorish */
         throw_program_error(line->line_number, join_strings(3, "label '", line->main_operand, "' has already been declared"), line->file_name, TRUE);
         return FALSE;
     }
@@ -71,6 +76,7 @@ Bool handle_line(SymbolTable *labels_table, SymbolTable *relocations_table, Pars
     }
     instruction_type = get_instruction_type(line->main_operand);
     if (instruction_type == LABEL) {
+
         if (!parse_label(line, labels_table, relocations_table, ic, dc, &instruction_type)) {
             return FALSE;
         }
@@ -122,7 +128,7 @@ Bool handle_line(SymbolTable *labels_table, SymbolTable *relocations_table, Pars
 }
 
 
-Bool first_step_process(Word data_image[MEMORY_SIZE], Word code_image[MEMORY_SIZE], SymbolTable *labels_table, SymbolTable *relocations_table, char *file_name, int *ic, int *dc) {
+Bool first_step_process(Word data_image[MEMORY_SIZE], Word code_image[MEMORY_SIZE], SymbolTable *labels_table, SymbolTable *relocations_table, char *file_name, int *ic, int *dc,Bool *should_second_step) {
     Bool is_success = TRUE;
     int lines_count = 1;
     ParsedLine current_line = {0};
@@ -131,11 +137,19 @@ Bool first_step_process(Word data_image[MEMORY_SIZE], Word code_image[MEMORY_SIZ
     if (file == NULL) {
         return FALSE;
     }
-    /* TODO: validate not infinite loop */
     while (fgets(line, MAX_LINE_LENGTH, file) != NULL) {
+        if(is_memory_exceeded(*ic, *dc)) {
+            throw_program_error(lines_count, "maximum memory size exceeded for current file" ,file_name, FALSE);
+            (*should_second_step) = FALSE;
+            return FALSE;
+        }
+        if (line[strlen(line) - 1] != '\n' && !feof(file)) {
+            throw_program_error(lines_count, "line is too long", file_name, FALSE);
+            (*should_second_step) = FALSE;
+            return FALSE;
+        }
         strcpy(tmp_line, line);
         parse_line(tmp_line, &current_line);
-        /*resize lines if needed*/
         current_line.line_number = lines_count;
         strcpy(current_line.file_name, file_name);
         CHECK_AND_UPDATE_SUCCESS(is_success, handle_line(labels_table, relocations_table, &current_line, data_image, code_image, ic, dc));

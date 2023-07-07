@@ -7,7 +7,6 @@
 
 char base64_encode(unsigned int value);
 
-/* TODO: make this work with existing join string */
 char *join_string_array(char **array, int size) {
     int i;
     char *string = (char *) safe_malloc(sizeof(char));
@@ -67,40 +66,23 @@ Bool is_empty_line(char *line) {
     return TRUE;
 }
 
-/* TODO: clean this */
 InstructionCode get_instruction_code(char *command) {
-    if (strcmp(command, MOV_COMMAND) == 0) {
-        return MOV;
-    } else if (strcmp(command, CMP_COMMAND) == 0) {
-        return CMP;
-    } else if (strcmp(command, ADD_COMMAND) == 0) {
-        return ADD;
-    } else if (strcmp(command, SUB_COMMAND) == 0) {
-        return SUB;
-    } else if (strcmp(command, NOT_COMMAND) == 0) {
-        return NOT;
-    } else if (strcmp(command, CLR_COMMAND) == 0) {
-        return CLR;
-    } else if (strcmp(command, LEA_COMMAND) == 0) {
-        return LEA;
-    } else if (strcmp(command, INC_COMMAND) == 0) {
-        return INC;
-    } else if (strcmp(command, DEC_COMMAND) == 0) {
-        return DEC;
-    } else if (strcmp(command, JMP_COMMAND) == 0)
-        return JMP;
-    else if (strcmp(command, BNE_COMMAND) == 0)
-        return BNE;
-    else if (strcmp(command, RED_COMMAND) == 0)
-        return RED;
-    else if (strcmp(command, PRN_COMMAND) == 0)
-        return PRN;
-    else if (strcmp(command, JSR_COMMAND) == 0)
-        return JSR;
-    else if (strcmp(command, RTS_COMMAND) == 0)
-        return RTS;
-    else if (strcmp(command, STOP_COMMAND) == 0)
-        return STOP;
+    if (strcmp(command, MOV_COMMAND) == 0) return MOV;
+    if (strcmp(command, CMP_COMMAND) == 0) return CMP;
+    if (strcmp(command, ADD_COMMAND) == 0) return ADD;
+    if (strcmp(command, SUB_COMMAND) == 0) return SUB;
+    if (strcmp(command, NOT_COMMAND) == 0) return NOT;
+    if (strcmp(command, CLR_COMMAND) == 0) return CLR;
+    if (strcmp(command, LEA_COMMAND) == 0) return LEA;
+    if (strcmp(command, INC_COMMAND) == 0) return INC;
+    if (strcmp(command, DEC_COMMAND) == 0) return DEC;
+    if (strcmp(command, JMP_COMMAND) == 0) return JMP;
+    if (strcmp(command, BNE_COMMAND) == 0) return BNE;
+    if (strcmp(command, RED_COMMAND) == 0) return RED;
+    if (strcmp(command, PRN_COMMAND) == 0) return PRN;
+    if (strcmp(command, JSR_COMMAND) == 0) return JSR;
+    if (strcmp(command, RTS_COMMAND) == 0) return RTS;
+    if (strcmp(command, STOP_COMMAND) == 0) return STOP;
     return INVALID_INSTRUCTION;
 }
 
@@ -237,4 +219,8 @@ void add_null_char(char *str) {
         return;
     }
     str[strlen(str)] = '\0';
+}
+
+Bool is_memory_exceeded(int ic, int dc) {
+    return ic + dc >= MEMORY_SIZE - MEMORY_OFFSET;
 }

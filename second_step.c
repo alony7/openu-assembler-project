@@ -87,7 +87,6 @@ Bool second_step_process(Word code_image[MEMORY_SIZE], SymbolTable *labels_table
     ParsedLine parsed_line = {0};
     FILE *file = create_file_stream(file_name, "r");
     char line[MAX_LINE_LENGTH] = {0},tmp_line[MAX_LINE_LENGTH] = {0};
-    /* TODO: validate not infinite loop */
     while (fgets(line, MAX_LINE_LENGTH, file) != NULL) {
         strcpy(tmp_line, line);
         parse_line(tmp_line, &parsed_line);

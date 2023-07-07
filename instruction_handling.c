@@ -94,14 +94,15 @@ Bool address_data_instruction(ParsedLine *line, Word *data_image, int *dc) {
 
 Bool is_legal_string_operand(ParsedLine *line) {
     int i;
-    char *string = line->parameters[0];
-    if (string[0] != STRING_BOUNDARY || string[strlen(string) - 1] != STRING_BOUNDARY) {
-        throw_program_error(line->line_number, "string must be enclosed in double quotes", line->file_name, FALSE);
+    char *first_string = line->parameters[0];
+    char *last_string = line->parameters[line->parameters_count - 1];
+    if (first_string[0] != STRING_BOUNDARY || last_string[strlen(last_string) - 1] != STRING_BOUNDARY) {
+        throw_program_error(line->line_number, "first_string must be enclosed in double quotes", line->file_name, FALSE);
         return FALSE;
     }
-    for (i = 0; i < strlen(string); i++) {
-        if ((string[i] & ~ASCII_MAX) != 0) {
-            throw_program_error(line->line_number, "string contains non-ascii characters", line->file_name, FALSE);
+    for (i = 0; i < strlen(first_string); i++) {
+        if ((first_string[i] & ~ASCII_MAX) != 0) {
+            throw_program_error(line->line_number, "first_string contains non-ascii characters", line->file_name, FALSE);
             return FALSE;
         }
     }

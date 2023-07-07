@@ -10,8 +10,6 @@
 static Bool rewrite_macros(MacroTable *table,FILE *input_file, FILE *output_file, char *input_file_name);
 
 
-/* TODO: merge this with fill macro table base on what they said in the lobby about not having to check if a macro is called before deifinition*/
-/* TODO: remove filename*/
 /* TODO: make free parsed lines run more cleanly*/
 
 Bool rewrite_macros( MacroTable *table,FILE *input_file, FILE *output_file, char *input_file_name) {
@@ -27,7 +25,7 @@ Bool rewrite_macros( MacroTable *table,FILE *input_file, FILE *output_file, char
         parse_line(tmp_line, &parsed_line);
         parsed_line.line_number = line_number;
         strcpy(parsed_line.file_name, input_file_name);
-        if (is_comment(line) && !is_macro_line) {
+        if (!parsed_line.main_operand || (is_comment(line) && !is_macro_line)) {
             free_parsed_line(&parsed_line);
             continue;
         }
@@ -45,7 +43,6 @@ Bool rewrite_macros( MacroTable *table,FILE *input_file, FILE *output_file, char
             free_parsed_line(&parsed_line);
             continue;
         } else if (strcmp(parsed_line.main_operand, START_MACRO_DIRECTIVE) == 0) {
-            /*TODO: validate if macro name is caught by command*/
             if (parsed_line.parameters_count != 1) {
                 throw_program_error(line_number, join_strings(2, START_MACRO_DIRECTIVE, " takes exactly 1 parameter"), parsed_line.file_name, TRUE);
                 return FALSE;
@@ -96,11 +93,8 @@ Bool expand_file_macros(char *input_filename, char *output_filename) {
         return FALSE;
     }
     macro_table = create_macro_table();
-//    parsed_input_file = parse_lines_from_file(input_file, input_filename);
-//    if ((result = fill_macro_table(parsed_input_file, macro_table))) {
     fseek(input_file, 0, SEEK_SET);
     result = rewrite_macros(macro_table, input_file,output_file,input_filename);
-//    }
     fclose(input_file);
     fclose(output_file);
     free_macro_table(macro_table);
