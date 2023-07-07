@@ -48,7 +48,7 @@ void parse_line(char *line, ParsedLine *parsed_line) {
     }
     parsed_line->parameters = parameters;
     parsed_line->parameters_count = parameters_count;
-    if(parameters_count && *(parameters[parameters_count-1]) == NULL){
+    if(parameters_count && (*(parameters[parameters_count-1]) == 0)){
         free(parameters[parameters_count-1]);
         parsed_line->parameters_count--;
     }

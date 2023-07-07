@@ -1,5 +1,6 @@
 #include <string.h>
 #include <stdarg.h>
+#include <stdlib.h>
 #include "utils.h"
 #include "instruction_handling.h"
 #include "error.h"
