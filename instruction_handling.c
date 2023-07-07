@@ -73,7 +73,6 @@ AddressingType get_addressing_type(char *operand) {
     }
 }
 
-/* TODO: make this work with size check*/
 void parse_int_to_word(Word *word, int num, Bool add_ARE) {
     if (add_ARE) {
         code_number_into_word_bits(word, ABSOLUTE_ADDRESSING, 0, 2);
@@ -84,9 +83,17 @@ void parse_int_to_word(Word *word, int num, Bool add_ARE) {
 }
 
 Bool address_data_instruction(ParsedLine *line, Word *data_image, int *dc) {
-    int i;
+    char *parsing_error = NULL;
+    int i , parsed_number;
     for (i = 0; i < line->parameters_count; i++) {
-        parse_int_to_word(&(data_image[*dc]), parse_int(line->parameters[i]), FALSE);
+        parsed_number = parse_int(line->parameters[i], MAX_12_BIT_NUMBER,MIN_12_BIT_NUMBER,&parsing_error);
+        if(parsing_error != NULL) {
+            throw_program_error(line->line_number, parsing_error, line->file_name, TRUE);
+            dc -= i;
+            return FALSE;
+        }
+
+        parse_int_to_word(&(data_image[*dc]), parsed_number, FALSE);
         (*dc)++;
     }
     return TRUE;
@@ -125,8 +132,15 @@ Bool address_string_instruction(ParsedLine *line, Word *data_image, int *dc) {
 
 Bool code_word_from_operand(ParsedLine *line, Word *code_image,const int *ic, char *raw_operand, AddressingType const addressing_type, OperandContext const context) {
     Register reg;
+    int parsed_number;
+    char *parsing_error = NULL;
     if (addressing_type == IMMEDIATE) {
-        parse_int_to_word(code_image + *ic, parse_int(raw_operand), TRUE);
+        parsed_number = parse_int(raw_operand,MAX_10_BIT_NUMBER,MIN_10_BIT_NUMBER,&parsing_error);
+        if(parsing_error != NULL) {
+            throw_program_error(line->line_number, parsing_error, line->file_name, TRUE);
+            return FALSE;
+        }
+        parse_int_to_word(code_image + *ic, parsed_number, TRUE);
     } else if (addressing_type == DIRECT) {
         set_word_to_zero(&code_image[*ic]);
     } else {
@@ -171,9 +185,15 @@ Bool address_code_instruction(ParsedLine *line, Word *code_image, int *ic) {
         throw_program_error(line->line_number, join_strings(2, "invalid number of operands for instruction: ", line->main_operand), line->file_name, TRUE);
         return FALSE;
     }
-    if (!handle_instruction(line, code_image, ic, &op_num, &i_options, &raw_src_operand, &raw_dest_operand, &src_op, &dest_op)) return FALSE;
+    if (!handle_instruction(line, code_image, ic, &op_num, &i_options, &raw_src_operand, &raw_dest_operand, &src_op, &dest_op)) {
+        return FALSE;
+    }
+    (*ic)++;
     if (line->parameters_count == 0) return TRUE;
-    if (!handle_parameter_operands(line, code_image, ic, raw_src_operand, raw_dest_operand, src_op, dest_op)) return FALSE;
+    if (!handle_parameter_operands(line, code_image, ic, raw_src_operand, raw_dest_operand, src_op, dest_op)) {
+        (*ic)--;
+        return FALSE;
+    }
 
     return TRUE;
 }
@@ -187,12 +207,17 @@ Bool handle_parameter_operands(ParsedLine *line, Word *code_image, int *ic, char
         } else {
             CHECK_AND_UPDATE_SUCCESS(is_success, code_word_from_operand(line, code_image, ic, raw_src_operand, src_op, SOURCE));
         }
+        if(!is_success) return FALSE;
         (*ic)++;
     } else {
         if (CHECK_AND_UPDATE_SUCCESS(is_success, code_word_from_operand(line, code_image, ic, raw_src_operand, src_op, SOURCE))) {
             (*ic)++;
             if (!(src_op == REGISTER && dest_op == REGISTER)) {
                 CHECK_AND_UPDATE_SUCCESS(is_success, code_word_from_operand(line, code_image, ic, raw_dest_operand, dest_op, DESTINATION));
+                if(!is_success) {
+                    (*ic)--;
+                    return FALSE;
+                };
                 (*ic)++;
             } else {
                 src_register = get_register(raw_src_operand);
@@ -204,6 +229,7 @@ Bool handle_parameter_operands(ParsedLine *line, Word *code_image, int *ic, char
                     if (dest_register == INVALID_REGISTER) {
                         throw_program_error(line->line_number, join_strings(2, "invalid register: ", raw_dest_operand), line->file_name, TRUE);
                     }
+                    (*ic)--;
                     return FALSE;
                 }
                 parse_registers_to_word(&(code_image[*ic - 1]), src_register, dest_register);
@@ -243,11 +269,10 @@ Bool handle_instruction(const ParsedLine *line, Word *code_image, int *ic, const
         *dest_op = NO_VALUE;
     }
     if (!is_addressing_types_legal((*i_options), (*src_op), (*dest_op))) {
-        throw_program_error(line->line_number, join_strings(2, "invalid main_operand type for instruction: ", line->main_operand), (char *) line->file_name, TRUE);
+        throw_program_error(line->line_number, join_strings(2, "invalid operand type for instruction: ", line->main_operand), (char *) line->file_name, TRUE);
         return FALSE;
     }
     parse_operand_to_word(code_image + *ic, (*i_code), (*src_op), (*dest_op));
-    (*ic)++;
     return TRUE;
 }
 
@@ -335,40 +360,50 @@ void get_word_addressing_types(Word *word, AddressingType *src, AddressingType *
     *dest = (AddressingType) (word->bits[2] + (word->bits[3] << 1) + (word->bits[4] << 2));
 }
 
-Bool is_valid_commas(char *line, char *error_message) {
+
+Bool is_valid_commas(char *line, char *error_message, int non_parameter_tokens_count) {
+    int token_count = 0;
+    int comma_count = 0;
+    int i = 0;
     int len = strlen(line);
-    int token_count = 0, i = 0;
     Bool is_previous_char_comma = FALSE;
+    Bool is_token_start = TRUE;
 
     for (i = 0; i < len; i++) {
-        while (!isspace(line[i]) && line[i] != ',') {
-            is_previous_char_comma = FALSE;
-            if(i<len-1){
-                i++;
-            } else {
-                break;
-            }
-        };
-        if (i> 0 && line[i - 1] != ':') {
-            token_count++;
+        if (isspace(line[i])) {
+            is_token_start = TRUE;
+            continue;
         }
-        if (isspace(line[i])) continue;
-        if (line[i] == ',') {
-            if (token_count <= 1) {
-                strcpy(error_message, "misplaced comma before the first parameter");
-                return FALSE;
-            };
+        else if (line[i] == ',') {
             if (is_previous_char_comma) {
-                strcpy(error_message, "multiple consecutive commas");
+                strcpy(error_message, "Multiple consecutive commas found");
                 return FALSE;
-            };
+            }
+            if(token_count <= non_parameter_tokens_count){
+                strcpy(error_message, "Invalid comma before the first parameter");
+                return FALSE;
+            }
             is_previous_char_comma = TRUE;
-        } else {
+            comma_count++;
+        }
+        else if (is_token_start) {
+            if (token_count > non_parameter_tokens_count) {
+                if(!is_previous_char_comma && comma_count <= token_count - non_parameter_tokens_count){
+                    strcpy(error_message, "Comma missing before a parameter token");
+                    return FALSE;
+                }
+            }
+            is_previous_char_comma = FALSE;
+            token_count++;
+            is_token_start = FALSE;
+        }
+        else{
             is_previous_char_comma = FALSE;
         }
     }
-    if(is_previous_char_comma) {
-        strcpy(error_message, "misplaced comma after the last parameter");
+
+    if(is_previous_char_comma){
+        strcpy(error_message, "Invalid comma found at the end of the line");
         return FALSE;
     }
     return TRUE;

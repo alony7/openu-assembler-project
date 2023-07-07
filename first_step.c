@@ -36,7 +36,6 @@ Bool parse_label(ParsedLine *line, SymbolTable *labels_table, SymbolTable *reloc
         return FALSE;
     }
     if (get_symbol(labels_table, line->main_operand) != NULL) {
-        /* TODO: this is errorish */
         throw_program_error(line->line_number, join_strings(3, "label '", line->main_operand, "' has already been declared"), line->file_name, TRUE);
         return FALSE;
     }
@@ -70,16 +69,24 @@ Bool handle_line(SymbolTable *labels_table, SymbolTable *relocations_table, Pars
     Symbol *symbol;
     char *validation_error[MAX_ERROR_LENGTH];
     Bool is_success = TRUE;
+    Bool instruction_is_label = FALSE;
     InstructionType instruction_type;
     if (line->main_operand == NULL) {
         return TRUE;
     }
     instruction_type = get_instruction_type(line->main_operand);
     if (instruction_type == LABEL) {
-
+        instruction_is_label = TRUE;
         if (!parse_label(line, labels_table, relocations_table, ic, dc, &instruction_type)) {
             return FALSE;
         }
+    }
+    if(instruction_type == COMMENT || instruction_type == EMPTY_LINE) {
+        return TRUE;
+    }
+    if(!is_valid_commas(line->original_line, (char *) validation_error,instruction_is_label?2:1)) {
+        throw_program_error(line->line_number, (char *) validation_error, line->file_name, FALSE);
+        return FALSE;
     }
     switch (instruction_type) {
         case (COMMENT):
@@ -120,10 +127,7 @@ Bool handle_line(SymbolTable *labels_table, SymbolTable *relocations_table, Pars
             throw_program_error(line->line_number, join_strings(2, "invalid instruction: ", line->main_operand), line->file_name, TRUE);
             return FALSE;
     }
-    if(!is_valid_commas(line->original_line, (char *) validation_error)) {
-        throw_program_error(line->line_number, (char *) validation_error, line->file_name, FALSE);
-        return FALSE;
-    }
+
     return is_success;
 }
 

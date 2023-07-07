@@ -84,6 +84,7 @@ Bool append_macro_item_value(MacroItem *item, char *value_to_append) {
 
 void free_macro_item_value(char **value) {
     int i;
+    if(value == NULL) return;
     for (i = 0; value[i] != NULL; i++) {
         free(value[i]);
     }

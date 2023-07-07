@@ -10,8 +10,6 @@
 static Bool rewrite_macros(MacroTable *table,FILE *input_file, FILE *output_file, char *input_file_name);
 
 
-/* TODO: make free parsed lines run more cleanly*/
-
 Bool rewrite_macros( MacroTable *table,FILE *input_file, FILE *output_file, char *input_file_name) {
     int line_number = 0;
     Bool is_macro_line = FALSE;
