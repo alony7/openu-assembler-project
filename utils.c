@@ -191,6 +191,7 @@ void trim_string_quotes(char *str) {
 }
 
 char base64_encode(unsigned int value) {
+    /* calculate the base64 value of the given number */
     if (value < 26) {
         return 'A' + value;
     } else if (value < 52) {
@@ -234,6 +235,7 @@ void clean_crlf(char *str) {
     for (i = 0; i < strlen(str); i++) {
         /* if the character is a CRLF, remove it */
         if (str[i] == '\n' || str[i] == WINDOWS_CRLF || str[i] == LINUX_CRLF) {
+            /* remove the CRLF */
             str[i] = '\0';
         }
     }

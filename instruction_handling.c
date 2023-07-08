@@ -6,35 +6,158 @@
 #include "instruction_handling.h"
 #include "utils.h"
 
+/**
+ * Checks if an instruction has a destination operand based on its options.
+ *
+ * @param i_options The instruction options to check.
+ * @return TRUE if the instruction options have a destination operand, FALSE otherwise.
+ */
 static Bool instruction_has_destination(InstructionOptions i_options);
 
+/**
+ * Checks if an instruction has a source operand based on its options.
+ *
+ * @param i_options The instruction options to check.
+ * @return TRUE if the instruction options have a source operand, FALSE otherwise.
+ */
 static Bool instruction_has_source(InstructionOptions i_options);
 
+/**
+ * Checks if the addressing types specified in the instruction options are legal.
+ * The addressing types should match the conditions specified in the given instruction options.
+ *
+ * @param i_options The instruction options containing the addressing types.
+ * @param src_op The addressing type of the source operand.
+ * @param dest_op The addressing type of the destination operand.
+ * @return TRUE if the addressing types are legal, FALSE otherwise.
+ */
 static Bool is_addressing_types_legal(InstructionOptions i_options, AddressingType src_op, AddressingType dest_op);
 
+/**
+ * Builds the instruction options based on the provided flags for source and destination operands.
+ *
+ * @param src_is_immediate Flag indicating if the source operand can be immediate.
+ * @param src_is_direct Flag indicating if the source operand can be direct.
+ * @param src_is_register Flag indicating if the source operand can be a register.
+ * @param dest_is_immediate Flag indicating if the destination operand can be immediate.
+ * @param dest_is_direct Flag indicating if the destination operand can be direct.
+ * @param dest_is_register Flag indicating if the destination operand can be a register.
+ * @param i_options Pointer to the InstructionOptions structure to update.
+ */
 static void build_instruction_options(int src_is_immediate, int src_is_direct, int src_is_register, int dest_is_immediate, int dest_is_direct, int dest_is_register, InstructionOptions *i_options);
 
+/**
+ * Handles the processing of an instruction. the instruction is usually the first token in the line thus making it the main operand.
+ *
+ * @param line The parsed line representing the instruction.
+ * @param code_image The code image to update.
+ * @param ic The instruction counter.
+ * @param i_code Pointer to the instruction code.
+ * @param i_options Pointer to the instruction options.
+ * @param raw_src_operand Pointer to the raw source operand string.
+ * @param raw_dest_operand Pointer to the raw destination operand string.
+ * @param src_op Pointer to the addressing type of the source operand.
+ * @param dest_op Pointer to the addressing type of the destination operand.
+ * @return TRUE if the instruction handling was successful, FALSE otherwise.
+ */
 static Bool handle_instruction(const ParsedLine *line, Word *code_image, int *ic, const InstructionCode *i_code, InstructionOptions *i_options, char **raw_src_operand, char **raw_dest_operand, AddressingType *src_op, AddressingType *dest_op);
 
+/**
+ * Handles the processing of parameter operands for an instruction.
+ *
+ * @param line The parsed line representing the instruction.
+ * @param code_image The code image to update.
+ * @param ic The instruction counter.
+ * @param raw_src_operand The raw source operand string.
+ * @param raw_dest_operand The raw destination operand string.
+ * @param src_op The addressing type of the source operand.
+ * @param dest_op The addressing type of the destination operand.
+ * @return TRUE if the parameter operand handling was successful, FALSE otherwise.
+ */
 static Bool handle_parameter_operands(ParsedLine *line, Word *code_image, int *ic, char *raw_src_operand, char *raw_dest_operand, AddressingType src_op, AddressingType dest_op);
 
+/**
+ * Parses registers into a word based on the source and destination register numbers.
+ *
+ * @param word The word to parse the registers into.
+ * @param src_register The source register.
+ * @param dest_register The destination register.
+ */
 static void parse_registers_to_word(Word *word, Register src_register, Register dest_register);
 
-static void parse_operand_to_word(Word *word, InstructionCode i_code, AddressingType src_op, AddressingType dest_op);
+/**
+ * Parses an assembly instruction into a word based on the instruction code and addressing types of its parameters.
+ *
+ * @param word The word to parse the operand into.
+ * @param i_code The instruction code.
+ * @param src_op The addressing type of the source operand.
+ * @param dest_op The addressing type of the destination operand.
+ */
+static void parse_instruction_to_word(Word *word, InstructionCode i_code, AddressingType src_op, AddressingType dest_op);
 
+/**
+ * Retrieves the addressing type based on the given operand, represented as a raw token.
+ *
+ * @param operand The operand string.
+ * @return The addressing type.
+ */
 static AddressingType get_addressing_type(char *operand);
 
+/**
+ * Parses an integer into a word based on the given integer and flag indicating whether to add ARE bits or not.
+ *
+ * @param word pointer to the word to parse the integer into.
+ * @param num The integer number.
+ * @param add_ARE Flag indicating whether to add ARE bits or not.
+ */
 static void parse_int_to_word(Word *word, int num, Bool add_ARE);
 
+/**
+ * Codes a word from the operand based on the addressing type and operand context.
+ *
+ * @param line The parsed line representing the instruction.
+ * @param code_image The code image to update.
+ * @param ic The instruction counter.
+ * @param raw_operand The raw operand string.
+ * @param addressing_type The addressing type of the operand.
+ * @param context The operand context (source or destination).
+ * @return TRUE if the coding was successful, FALSE otherwise.
+ */
 static Bool code_word_from_operand(ParsedLine *line, Word *code_image, const int *ic, char *raw_operand, AddressingType addressing_type, OperandContext context);
 
+/**
+ * Sets the bits of a word to zero.
+ *
+ * @param word The word to set to zero.
+ */
 static void set_word_to_zero(Word *word);
 
+/**
+ * Codes a number into the bits of a word.
+ *
+ * @param word pointer to the word to code the number into.
+ * @param number The number to code.
+ * @param offset The offset index where the coding starts.
+ * @param length The number of bits to code.
+ */
 static void code_number_into_word_bits(Word *word, int number, int offset, int length);
 
+/**
+ * Retrieves the relevant instruction options based on the instruction code.
+ *
+ * @param i_code The instruction code.
+ * @param i_options Pointer to the InstructionOptions structure to update.
+ */
 static void get_instruction_options(InstructionCode i_code, InstructionOptions *i_options);
 
+/**
+ * Checks if a string operand is legal.
+
+ * @param line The parsed line representing the instruction.
+ * @return TRUE if the string operand is legal, FALSE otherwise.
+ */
 static Bool is_legal_string_operand(ParsedLine *line);
+
 
 void set_word_to_zero(Word *word) {
     int i;
@@ -55,7 +178,7 @@ void parse_registers_to_word(Word *word, Register src_register, Register dest_re
     code_number_into_word_bits(word, src_register, 7, 5);
 }
 
-void parse_operand_to_word(Word *word, InstructionCode i_code, AddressingType src_op, AddressingType dest_op) {
+void parse_instruction_to_word(Word *word, InstructionCode i_code, AddressingType src_op, AddressingType dest_op) {
     set_word_to_zero(word);
     code_number_into_word_bits(word, ABSOLUTE_ADDRESSING, ARE_START_INDEX, ARE_END_INDEX);
     code_number_into_word_bits(word, dest_op, 2, 3);
@@ -84,10 +207,10 @@ void parse_int_to_word(Word *word, int num, Bool add_ARE) {
 
 Bool address_data_instruction(ParsedLine *line, Word *data_image, int *dc) {
     char *parsing_error = NULL;
-    int i , parsed_number;
+    int i, parsed_number;
     for (i = 0; i < line->parameters_count; i++) {
-        parsed_number = parse_int(line->parameters[i], MAX_12_BIT_NUMBER,MIN_12_BIT_NUMBER,&parsing_error);
-        if(parsing_error != NULL) {
+        parsed_number = parse_int(line->parameters[i], MAX_12_BIT_NUMBER, MIN_12_BIT_NUMBER, &parsing_error);
+        if (parsing_error != NULL) {
             throw_program_error(line->line_number, parsing_error, line->file_name, TRUE);
             dc -= i;
             return FALSE;
@@ -130,13 +253,13 @@ Bool address_string_instruction(ParsedLine *line, Word *data_image, int *dc) {
     return TRUE;
 }
 
-Bool code_word_from_operand(ParsedLine *line, Word *code_image,const int *ic, char *raw_operand, AddressingType const addressing_type, OperandContext const context) {
+Bool code_word_from_operand(ParsedLine *line, Word *code_image, const int *ic, char *raw_operand, AddressingType const addressing_type, OperandContext const context) {
     Register reg;
     int parsed_number;
     char *parsing_error = NULL;
     if (addressing_type == IMMEDIATE) {
-        parsed_number = parse_int(raw_operand,MAX_10_BIT_NUMBER,MIN_10_BIT_NUMBER,&parsing_error);
-        if(parsing_error != NULL) {
+        parsed_number = parse_int(raw_operand, MAX_10_BIT_NUMBER, MIN_10_BIT_NUMBER, &parsing_error);
+        if (parsing_error != NULL) {
             throw_program_error(line->line_number, parsing_error, line->file_name, TRUE);
             return FALSE;
         }
@@ -207,14 +330,14 @@ Bool handle_parameter_operands(ParsedLine *line, Word *code_image, int *ic, char
         } else {
             CHECK_AND_UPDATE_SUCCESS(is_success, code_word_from_operand(line, code_image, ic, raw_src_operand, src_op, SOURCE));
         }
-        if(!is_success) return FALSE;
+        if (!is_success) return FALSE;
         (*ic)++;
     } else {
         if (CHECK_AND_UPDATE_SUCCESS(is_success, code_word_from_operand(line, code_image, ic, raw_src_operand, src_op, SOURCE))) {
             (*ic)++;
             if (!(src_op == REGISTER && dest_op == REGISTER)) {
                 CHECK_AND_UPDATE_SUCCESS(is_success, code_word_from_operand(line, code_image, ic, raw_dest_operand, dest_op, DESTINATION));
-                if(!is_success) {
+                if (!is_success) {
                     (*ic)--;
                     return FALSE;
                 };
@@ -272,7 +395,7 @@ Bool handle_instruction(const ParsedLine *line, Word *code_image, int *ic, const
         throw_program_error(line->line_number, join_strings(2, "invalid operand type for instruction: ", line->main_operand), (char *) line->file_name, TRUE);
         return FALSE;
     }
-    parse_operand_to_word(code_image + *ic, (*i_code), (*src_op), (*dest_op));
+    parse_instruction_to_word(code_image + *ic, (*i_code), (*src_op), (*dest_op));
     return TRUE;
 }
 
@@ -373,22 +496,20 @@ Bool is_valid_commas(char *line, char *error_message, int non_parameter_tokens_c
         if (isspace(line[i])) {
             is_token_start = TRUE;
             continue;
-        }
-        else if (line[i] == ',') {
+        } else if (line[i] == ',') {
             if (is_previous_char_comma) {
                 strcpy(error_message, "Multiple consecutive commas found");
                 return FALSE;
             }
-            if(token_count <= non_parameter_tokens_count){
+            if (token_count <= non_parameter_tokens_count) {
                 strcpy(error_message, "Invalid comma before the first parameter");
                 return FALSE;
             }
             is_previous_char_comma = TRUE;
             comma_count++;
-        }
-        else if (is_token_start) {
+        } else if (is_token_start) {
             if (token_count > non_parameter_tokens_count) {
-                if(!is_previous_char_comma && comma_count <= token_count - non_parameter_tokens_count){
+                if (!is_previous_char_comma && comma_count <= token_count - non_parameter_tokens_count) {
                     strcpy(error_message, "Comma missing before a parameter token");
                     return FALSE;
                 }
@@ -396,13 +517,12 @@ Bool is_valid_commas(char *line, char *error_message, int non_parameter_tokens_c
             is_previous_char_comma = FALSE;
             token_count++;
             is_token_start = FALSE;
-        }
-        else{
+        } else {
             is_previous_char_comma = FALSE;
         }
     }
 
-    if(is_previous_char_comma){
+    if (is_previous_char_comma) {
         strcpy(error_message, "Invalid comma found at the end of the line");
         return FALSE;
     }
