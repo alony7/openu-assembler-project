@@ -2,8 +2,6 @@
 
 #include "instruction_handling.h"
 #include "util_types.h"
-
-#define CHECK_AND_UPDATE_SUCCESS(is_success, instruction) (is_success = (instruction) && is_success)
 #define CLEAN_STRING(str) do { clean_crlf(str); add_null_char(str); } while(0)
 
 /**

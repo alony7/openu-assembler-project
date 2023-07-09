@@ -62,6 +62,7 @@ Symbol *get_symbol(SymbolTable *table, char *name) {
     if(table == NULL || name == NULL) {
         return NULL;
     }
+    /* iterate over the symbols in the table */
     for (i = 0; i < table->size; i++) {
         symbol = table->symbols[i];
         /* if the symbol's name matches the given name, return it */
@@ -78,6 +79,7 @@ int count_symbols_by_type(SymbolTable *table, InstructionType type) {
     if(table == NULL) {
         return 0;
     }
+    /* iterate over the symbols in the table */
     for (i = 0; i < table->size; i++) {
         /* if the symbol's type matches the given type, increment the counter */
         if (table->symbols[i]->type == type) {

@@ -190,11 +190,11 @@ void get_word_addressing_types(Word *word, AddressingType *src, AddressingType *
 /**
  * Parses a symbol into a word based on the symbol index and addressing method.
  *
- * @param symbol_index The index of the symbol.
+ * @param symbol_address The address of the symbol in memory image.
  * @param word The word to parse the symbol into.
  * @param addressing_method The addressing method to use.
  */
-void parse_symbol_to_word(int symbol_index, Word *word, AddressingMethod addressing_method);
+void parse_symbol_to_word(int symbol_address, Word *word, AddressingMethod addressing_method);
 
 
 

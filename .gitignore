@@ -4,6 +4,7 @@
 
 # Object files
 *.o
+*.ob
 *.ko
 *.obj
 *.elf
@@ -176,5 +177,10 @@ _deps
 ### CMake Patch ###
 # External projects
 *-prefix/
+
+
+### Project Patch ###
+*.ent
+*.ext
 
 # End of https://www.toptal.com/developers/gitignore/api/cmake,clion,c
