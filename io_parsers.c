@@ -25,8 +25,9 @@ void parse_line(char *line, ParsedLine *parsed_line) {
     int parameters_count;
     const char *delimiters = " ,\n\t";
     strcpy(parsed_line->original_line, line);
+    CLEAN_STRING(parsed_line->original_line);
 
-    if (line[0] == '\n' || line[0] == '\0') {
+    if (line[0] == EOL || line[0] == NULL_CHAR) {
         /* Empty line, no further processing needed*/
         parsed_line->main_operand = NULL;
         parsed_line->parameters = NULL;
@@ -72,10 +73,12 @@ void free_parsed_line(ParsedLine *line) {
     /* free the main operand */
     free(line->main_operand);
     for (i = 0; i < line->parameters_count; i++) {
-        /* free the parameters */
-        free(line->parameters[i]);
+        /* free each parameter */
+        if(*line->parameters[i] != NULL_CHAR){
+            free(line->parameters[i]);
+        }
     }
-    /* free the pointers array */
+    /* free the parameter pointers array */
     free(line->parameters);
 }
 
@@ -87,3 +90,7 @@ void build_output_filename(char *base_name, char *suffix, char *output_buffer) {
     strcat(output_buffer, suffix);
 }
 
+void clear_current_line(FILE *stream){
+    char c;
+    while((c = fgetc(stream)) != EOL && c != EOF);
+}

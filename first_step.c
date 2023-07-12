@@ -56,29 +56,29 @@ void add_ic_to_all_data_addresses(SymbolTable *table, int ic) {
 
 }
 
-Bool parse_label(ParsedLine *line, SymbolTable *labels_table, SymbolTable *relocations_table, const int *ic,const int *dc, InstructionType *next_instruction_type) {
+Bool parse_label(ParsedLine *line, SymbolTable *labels_table, SymbolTable *relocations_table, const int *ic, const int *dc, InstructionType *next_instruction_type) {
     Symbol *symbol = NULL;
     InstructionType label_instruction_type;
     /* remove the colon from the label name */
-    line->main_operand[strlen(line->main_operand) - 1] = NULL_CHAR;
+    LAST_CHAR(line->main_operand) = NULL_CHAR;
     /* check if the label name is not an instruction name */
-    if(get_instruction_code(line->main_operand) != INVALID_INSTRUCTION) {
-        throw_program_error(line->line_number, join_strings(2, "illegal label name: ", line->main_operand), line->file_name, TRUE);
+    if (get_instruction_code(line->main_operand) != INVALID_INSTRUCTION) {
+        program_log(ERROR,line->line_number, join_strings(2, "illegal label name: ", line->main_operand), line->file_name, TRUE);
         return FALSE;
     }
     /* check if the label is empty */
     if (line->parameters_count == 0) {
-        throw_program_error(line->line_number, "empty label", line->file_name, FALSE);
+        program_log(ERROR,line->line_number, "empty label", line->file_name, FALSE);
         return FALSE;
     }
     /* check if the label has already been declared */
     if (get_symbol(labels_table, line->main_operand) != NULL) {
-        throw_program_error(line->line_number, join_strings(3, "label '", line->main_operand, "' has already been declared"), line->file_name, TRUE);
+        program_log(ERROR,line->line_number, join_strings(3, "label '", line->main_operand, "' has already been declared"), line->file_name, TRUE);
         return FALSE;
     }
     /* check if the label has already been declared as external */
     if ((symbol = get_symbol(relocations_table, line->main_operand)) != NULL && symbol->type == EXTERN) {
-        throw_program_error(line->line_number, join_strings(3, "label '", line->main_operand, "' has already been declared as external"), line->file_name, TRUE);
+        program_log(ERROR,line->line_number, join_strings(3, "label '", line->main_operand, "' has already been declared as external"), line->file_name, TRUE);
         return FALSE;
     }
     /* extract the instruction type from the label's value */
@@ -97,8 +97,8 @@ Bool parse_label(ParsedLine *line, SymbolTable *labels_table, SymbolTable *reloc
             break;
         default:
             /* if the labels value starts with a dot but it's not a data or string instruction, it's an invalid instruction type */
-            if (line->parameters[0][0] == '.') {
-                throw_program_error(line->line_number, join_strings(2, "invalid instruction type: ", line->parameters[0]), line->file_name, TRUE);
+            if (line->parameters[0][0] == SECTION_PREFIX) {
+                program_log(ERROR,line->line_number, join_strings(2, "invalid instruction type: ", line->parameters[0]), line->file_name, TRUE);
                 return FALSE;
             }
     }
@@ -112,7 +112,7 @@ Bool parse_label(ParsedLine *line, SymbolTable *labels_table, SymbolTable *reloc
 Bool handle_line(SymbolTable *labels_table, SymbolTable *relocations_table, ParsedLine *line, Word *data_image, Word *code_image, int *ic, int *dc) {
     Symbol *symbol;
     char *validation_error[MAX_ERROR_LENGTH];
-    Bool is_success = TRUE,instruction_is_label = FALSE;
+    Bool is_success = TRUE, instruction_is_label = FALSE;
     InstructionType instruction_type;
     /* check if the line is empty */
     if (line->main_operand == NULL) {
@@ -129,40 +129,40 @@ Bool handle_line(SymbolTable *labels_table, SymbolTable *relocations_table, Pars
         }
     }
     /* return true if the instruction is a comment or an empty line */
-    if(instruction_type == COMMENT || instruction_type == EMPTY_LINE) {
+    if (instruction_type == COMMENT || instruction_type == EMPTY_LINE) {
         return TRUE;
     }
     /* we don't need to check the commas for a string instruction */
-    if(instruction_type != STRING){
+    if (instruction_type != STRING) {
         /* check if the instruction's commas are valid */
         /* if the instruction is a label, the commas should be checked from the second token. otherwise, from the first token (which is the instruction itself) */
-        if(!is_valid_commas(line->original_line, (char *) validation_error,instruction_is_label?2:1)) {
-            throw_program_error(line->line_number, (char *) validation_error, line->file_name, FALSE);
+        if (!is_valid_commas(line->original_line, (char *) validation_error, instruction_is_label ? 2 : 1)) {
+            program_log(ERROR,line->line_number, (char *) validation_error, line->file_name, FALSE);
             return FALSE;
         }
     }
     switch (instruction_type) {
         case (DATA):
             /* address the data instruction */
-            CHECK_AND_UPDATE_SUCCESS(is_success, address_data_instruction(line, data_image, dc));
+            ASSIGN_LEFT_LOGICAL_AND(is_success, address_data_instruction(line, data_image, dc));
             break;
         case (STRING):
             /* address the string instruction */
-            CHECK_AND_UPDATE_SUCCESS(is_success, address_string_instruction(line, data_image, dc));
+            ASSIGN_LEFT_LOGICAL_AND(is_success, address_string_instruction(line, data_image, dc));
             break;
         case (LABEL):
             /* if the instruction is a label than it's a nested label, since if the previous token was a label, it would have been parsed and advanced */
-            throw_program_error(line->line_number, "nested labels are not allowed", line->file_name, FALSE);
+            program_log(ERROR,line->line_number, "nested labels are not allowed", line->file_name, FALSE);
             return FALSE;
         case (EXTERN):
             /* check if the label is already declared as entry or extern */
             if (get_symbol(relocations_table, line->parameters[0]) != NULL) {
-                throw_program_error(line->line_number, join_strings(3, "label '", line->parameters[0], "' is already declared as entry or extern"), line->file_name, TRUE);
+                program_log(ERROR,line->line_number, join_strings(3, "label '", line->parameters[0], "' is already declared as entry or extern"), line->file_name, TRUE);
                 return FALSE;
             }
             /* check if the label is already defined in this file, which is illegal for extern labels */
             if (get_symbol(labels_table, line->parameters[0]) != NULL) {
-                throw_program_error(line->line_number, join_strings(3, "label '", line->parameters[0], "' cannot be external since it is defined in this file"), line->file_name, TRUE);
+                program_log(ERROR,line->line_number, join_strings(3, "label '", line->parameters[0], "' cannot be external since it is defined in this file"), line->file_name, TRUE);
                 return FALSE;
             }
             /* add the label to the symbol table with 0 as the address */
@@ -172,7 +172,7 @@ Bool handle_line(SymbolTable *labels_table, SymbolTable *relocations_table, Pars
         case (ENTRY):
             /* check if the label is already declared as entry or extern */
             if (get_symbol(relocations_table, line->parameters[0]) != NULL) {
-                throw_program_error(line->line_number, join_strings(3, "label '", line->parameters[0], "' is already marked as extern or entry"), line->file_name, TRUE);
+                program_log(ERROR,line->line_number, join_strings(3, "label '", line->parameters[0], "' is already marked as extern or entry"), line->file_name, TRUE);
                 return FALSE;
             }
             /* add the label to the symbol table with ic as the address */
@@ -181,12 +181,12 @@ Bool handle_line(SymbolTable *labels_table, SymbolTable *relocations_table, Pars
             break;
         case (COMMAND):
             /* address as a command instruction */
-            CHECK_AND_UPDATE_SUCCESS(is_success, address_code_instruction(line, code_image, ic));
+            ASSIGN_LEFT_LOGICAL_AND(is_success, address_code_instruction(line, code_image, ic));
             break;
         default:
             /* if the instruction is not a label, data, string, extern, entry or command, it's an invalid instruction */
             /* comments and empty lines are already handled before the switch */
-            throw_program_error(line->line_number, join_strings(2, "invalid instruction: ", line->main_operand), line->file_name, TRUE);
+            program_log(ERROR,line->line_number, join_strings(2, "invalid instruction: ", line->main_operand), line->file_name, TRUE);
             return FALSE;
     }
 
@@ -194,11 +194,12 @@ Bool handle_line(SymbolTable *labels_table, SymbolTable *relocations_table, Pars
 }
 
 
-Bool first_step_process(Word data_image[MEMORY_SIZE], Word code_image[MEMORY_SIZE], SymbolTable *labels_table, SymbolTable *relocations_table, ErrorList *errors,char *file_name, int *ic, int *dc,Bool *should_second_step) {
-    Bool is_line_success,is_file_success = TRUE;
-    int lines_count = 1;
+Bool first_step_process(Word data_image[MEMORY_SIZE], Word code_image[MEMORY_SIZE], SymbolTable *labels_table, SymbolTable *relocations_table, ErrorList *errors, char *file_name, int *ic, int *dc, Bool *should_continue_file_processing) {
+    Bool is_line_success, is_file_success = TRUE;
+    int line_number = 1;
+    char c;
     ParsedLine current_line = {0};
-    char line[MAX_LINE_LENGTH] = {0},tmp_line[MAX_LINE_LENGTH] = {0};
+    char line[MAX_LINE_LENGTH] = {0}, tmp_line[MAX_LINE_LENGTH] = {0};
     /* open the file */
     FILE *file = create_file_stream(file_name, READ_MODE);
     /* check if the file was opened successfully */
@@ -209,38 +210,34 @@ Bool first_step_process(Word data_image[MEMORY_SIZE], Word code_image[MEMORY_SIZ
     while (fgets(line, MAX_LINE_LENGTH, file) != NULL) {
         is_line_success = TRUE;
         /* check if the memory size is exceeded */
-        if(is_memory_exceeded(*ic, *dc)) {
-            throw_program_error(lines_count, "maximum memory size exceeded for current file" ,file_name, FALSE);
-            /* TODO: rename this parameter */
-            (*should_second_step) = FALSE;
-            /* TODO: check if its necassary */
-            add_error_line(errors, lines_count);
+        if (is_memory_exceeded(*ic, *dc)) {
+            program_log(ERROR,line_number, "maximum memory size exceeded for current file", file_name, FALSE);
+            (*should_continue_file_processing) = FALSE;
             return FALSE;
         }
         /* check if the line is too long */
-        if (line[strlen(line) - 1] != '\n' && !feof(file)) {
-            throw_program_error(lines_count, "line is too long", file_name, FALSE);
-            (*should_second_step) = FALSE;
-            /* TODO: check if its necassary */
-            add_error_line(errors, lines_count);
-            return FALSE;
+        if (LAST_CHAR(line) != EOL && !feof(file)) {
+            program_log(ERROR,line_number, "line is too long", file_name, FALSE);
+            clear_current_line(file);
+            is_line_success = FALSE;
         }
-        strcpy(tmp_line, line);
-        /* parse the line */
-        parse_line(tmp_line, &current_line);
-        current_line.line_number = lines_count;
-        strcpy(current_line.file_name, file_name);
-        /* process the line */
-        CHECK_AND_UPDATE_SUCCESS(is_line_success,handle_line(labels_table, relocations_table, &current_line, data_image, code_image, ic, dc));
-        /* if the line was not successful, add its number to the error list */
-        if(!is_line_success) {
-            add_error_line(errors, lines_count);
+        if (is_line_success) {
+            strcpy(tmp_line, line);
+            /* parse the line */
+            parse_line(tmp_line, &current_line);
+            current_line.line_number = line_number;
+            strcpy(current_line.file_name, file_name);
+            /* process the line */
+            ASSIGN_LEFT_LOGICAL_AND(is_line_success, handle_line(labels_table, relocations_table, &current_line, data_image, code_image, ic, dc));
+            /* free the line's memory */
+            free_parsed_line(&current_line);
+        } else {
+            /* if the line was not successful, add its number to the error list */
+            add_error_line(errors, line_number);
         }
         /* update the file's success flag */
-        CHECK_AND_UPDATE_SUCCESS(is_file_success, is_line_success);
-        lines_count++;
-        /* free the line's memory */
-        free_parsed_line(&current_line);
+        ASSIGN_LEFT_LOGICAL_AND(is_file_success, is_line_success);
+        line_number++;
     }
     /* add the instruction counter to the data addresses */
     add_ic_to_all_data_addresses(labels_table, *ic);

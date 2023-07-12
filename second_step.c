@@ -50,7 +50,7 @@ Bool rewrite_dynamic_word(AddressingType operand_type, const int *ic, Word *code
             }
             /* if the symbol was not defined and it is not external, throw an error */
             if (label_symbol == NULL && is_external == FALSE) {
-                throw_program_error(line->line_number, join_strings(3, "label '", line->parameters[parameter_index], "' is not defined"), line->file_name, TRUE);
+                program_log(ERROR,line->line_number, join_strings(3, "label '", line->parameters[parameter_index], "' is not defined"), line->file_name, TRUE);
                 return FALSE;
             }
             /* if the symbol is external, add it to the externals table and set the word to 0 */
@@ -80,7 +80,7 @@ Bool process_line(ParsedLine *line, int *ic, Word *code_image, SymbolTable *labe
         case (ENTRY):
             /* check if the label is defined in this file scope. if not, throw an error */
             if (get_symbol(labels_table, line->parameters[0]) == NULL) {
-                throw_program_error(line->line_number, join_strings(3, "entry '", line->parameters[0], "' is not defined in this file scope"), line->file_name, TRUE);
+                program_log(ERROR,line->line_number, join_strings(3, "entry '", line->parameters[0], "' is not defined in this file scope"), line->file_name, TRUE);
                 return FALSE;
             }
             break;
@@ -105,13 +105,13 @@ Bool process_line(ParsedLine *line, int *ic, Word *code_image, SymbolTable *labe
             }
             /* if there is a source operand, process it */
             if(src_operand_type != NO_VALUE){
-                CHECK_AND_UPDATE_SUCCESS(is_success, rewrite_dynamic_word(src_operand_type, ic, code_image, labels_table, relocations_table, externals_table, line, 0));
+                ASSIGN_LEFT_LOGICAL_AND(is_success, rewrite_dynamic_word(src_operand_type, ic, code_image, labels_table, relocations_table, externals_table, line, 0));
                 (*ic)++;
             }
             /* if there is a destination operand, process it */
             if(dest_operand_type != NO_VALUE){
                 /* if there was no source operand, the destination operand is the first parameter. else, it is the second parameter */
-                CHECK_AND_UPDATE_SUCCESS(is_success, rewrite_dynamic_word(dest_operand_type, ic, code_image, labels_table, relocations_table, externals_table, line, src_operand_type == NO_VALUE ? 0 : 1));
+                ASSIGN_LEFT_LOGICAL_AND(is_success, rewrite_dynamic_word(dest_operand_type, ic, code_image, labels_table, relocations_table, externals_table, line, src_operand_type == NO_VALUE ? 0 : 1));
                 (*ic)++;
             }
         default:
@@ -140,7 +140,7 @@ Bool second_step_process(Word code_image[MEMORY_SIZE], SymbolTable *labels_table
         parsed_line.line_number = lines_count;
         strcpy(parsed_line.file_name, file_name);
         /* process line */
-        CHECK_AND_UPDATE_SUCCESS(is_success, process_line(&parsed_line, ic, code_image, labels_table, relocations_table, externals_table));
+        ASSIGN_LEFT_LOGICAL_AND(is_success, process_line(&parsed_line, ic, code_image, labels_table, relocations_table, externals_table));
         lines_count++;
         free_parsed_line(&parsed_line);
     }

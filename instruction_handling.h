@@ -49,7 +49,8 @@ typedef enum InstructionCode {
  */
 typedef struct {
     /* The bits of the word */
-    Bool bits[WORD_SIZE];
+    /* TODO: change to bool */
+    int bits[WORD_SIZE];
 } Word;
 
 /**

@@ -43,6 +43,9 @@
 #define REGISTER_PREFIX '@'
 #define REGISTER_LETTER 'r'
 #define NULL_CHAR '\0'
+#define EOL '\n'
+#define CAPITAL_A 'A'
+#define SMALL_A 'a'
 #define STRING_BOUNDARY '"'
 #define ASCII_MAX 0x7f
 #define BASE64_WORD_LENGTH 2
@@ -56,3 +59,9 @@
 #define MAX_10_BIT_NUMBER 1023
 #define MIN_12_BIT_NUMBER -2048
 #define MIN_10_BIT_NUMBER -512
+#define SECTION_PREFIX '.'
+#define ALPHABET_SIZE 26
+#define ZERO_CHAR '0'
+#define BASE64_62TH_CHAR '+'
+#define BASE64_63TH_CHAR '/'
+#define COMMA ','

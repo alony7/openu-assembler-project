@@ -12,15 +12,7 @@ typedef struct ErrorList {
     int *lines;
 } ErrorList;
 
-/**
- * Throws a program error with the specified error message.
- *
- * @param line_number The line number where the error occurred.
- * @param error_message The error message to display.
- * @param file_name The name of the file where the error occurred.
- * @param should_free_smg Indicates whether the error message should be freed after use.
- */
-void throw_program_error(int line_number, char *error_message, char *file_name, Bool should_free_smg);
+
 
 /**
  * Throws a system error with the specified error message.

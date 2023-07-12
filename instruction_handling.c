@@ -171,7 +171,7 @@ void set_word_to_zero(Word *word) {
 
 void parse_symbol_to_word(int symbol_address, Word *word, AddressingMethod addressing_method) {
     /* add ARE bits */
-    code_number_into_word_bits(word, addressing_method, 0, 2);
+    code_number_into_word_bits(word, addressing_method, ARE_START_INDEX, ARE_END_INDEX);
     /* add symbol index */
     code_number_into_word_bits(word, symbol_address, 2, 10);
 }
@@ -218,18 +218,20 @@ void parse_int_to_word(Word *word, int num, Bool add_ARE) {
         code_number_into_word_bits(word, num, 0, 12);
     }
 }
-/* TODO: check for enoguh parameters */
 /* TODO: allow data and string without a label */
 Bool address_data_instruction(ParsedLine *line, Word *data_image, int *dc) {
     char *parsing_error = NULL;
     int i, parsed_number;
-    /* iterate over the parameters and parse them into the data image */
+    /* Iterate over the parameters and parse them into the data image */
+    if(line->parameters_count == 0) {
+        program_log(ERROR,line->line_number, ".data command requires at least 1 parameter", line->file_name, FALSE);
+        return FALSE;
+    }
     for (i = 0; i < line->parameters_count; i++) {
         parsed_number = parse_int(line->parameters[i], MAX_12_BIT_NUMBER, MIN_12_BIT_NUMBER, &parsing_error);
         /* check if there was a parsing error */
         if (parsing_error != NULL) {
-            throw_program_error(line->line_number, parsing_error, line->file_name, TRUE);
-            /* TODO: check if this works */
+            program_log(ERROR,line->line_number, parsing_error, line->file_name, TRUE);
             /* remove the number of words that were already coded */
             dc -= i;
             return FALSE;
@@ -243,42 +245,67 @@ Bool address_data_instruction(ParsedLine *line, Word *data_image, int *dc) {
 
 Bool is_legal_string_operand(ParsedLine *line) {
     int i;
+    Bool is_comma_after_string = FALSE;
+    char *original_string = line->original_line;
     /* first string is the first part of a space separated string */
     char *first_string = line->parameters[0];
     /* last string is the last part of a space separated string */
     char *last_string = line->parameters[line->parameters_count - 1];
+    while(*original_string != STRING_BOUNDARY){
+        if(*original_string == COMMA){
+            program_log(ERROR,line->line_number, "comma before string is illegal", line->file_name, FALSE);
+            return FALSE;
+        }
+        original_string++;
+    }
+
     /* check if the first and last strings are enclosed in double quotes to support spaces in the string */
-    if (first_string[0] != STRING_BOUNDARY || last_string[strlen(last_string) - 1] != STRING_BOUNDARY) {
-        throw_program_error(line->line_number, "first_string must be enclosed in double quotes", line->file_name, FALSE);
+    if (first_string[0] != STRING_BOUNDARY || LAST_CHAR(last_string) != STRING_BOUNDARY) {
+        program_log(ERROR,line->line_number, "first string must be enclosed in double quotes", line->file_name, FALSE);
         return FALSE;
     }else{
         if(strlen(first_string) == 1 && first_string == last_string){
-            throw_program_error(line->line_number, "first_string must be enclosed in double quotes", line->file_name, FALSE);
+            program_log(ERROR,line->line_number, "first string must be enclosed in double quotes", line->file_name, FALSE);
             return FALSE;
         }
     }
     for (i = 0; i < strlen(line->original_line); i++) {
         if ((line->original_line[i] & ~ASCII_MAX) != 0) {
             /* the string contains non-ascii characters */
-            throw_program_error(line->line_number, "first_string contains non-ascii characters", line->file_name, FALSE);
+            program_log(ERROR,line->line_number, "first string contains non-ascii characters", line->file_name, FALSE);
             return FALSE;
         }
+    }
+    while(*original_string != NULL_CHAR){
+        if(*original_string == COMMA){
+            is_comma_after_string = TRUE;
+        }
+        else if(*original_string == STRING_BOUNDARY){
+            is_comma_after_string = FALSE;
+        }
+        original_string++;
+    }
+    if(is_comma_after_string){
+        program_log(ERROR,line->line_number, "comma after string is illegal", line->file_name, FALSE);
+        return FALSE;
     }
     return TRUE;
 }
 
-/* TODO: validate there is a check for single double quotes */
-/* TODO: validate there is a check for space after the double quotes
+/* TODO: validate there is a check for space after the double quotes */
+
 Bool address_string_instruction(ParsedLine *line, Word *data_image, int *dc) {
     int i;
-    char *string_token = line->parameters[0];
+    char *string_token = line->original_line;
     if(line->parameters_count == 0){
-        throw_program_error(line->line_number, "no string to encode after the .string command", line->file_name, FALSE);
+        program_log(ERROR,line->line_number, "no string to encode after the .string command", line->file_name, FALSE);
         return FALSE;
     }
     if (!is_legal_string_operand(line)) return FALSE;
+    while(*string_token != STRING_BOUNDARY){
+        string_token++;
+    }
     trim_string_quotes(string_token);
-
     for (i = 0; i < strlen(string_token); i++) {
         parse_int_to_word(&(data_image[*dc]), (int) (string_token[i]), FALSE);
         (*dc)++;
@@ -300,7 +327,7 @@ Bool code_word_from_operand(ParsedLine *line, Word *code_image, const int *ic, c
         parsed_number = parse_int(raw_operand, MAX_10_BIT_NUMBER, MIN_10_BIT_NUMBER, &parsing_error);
         /* check if there was a parsing error */
         if (parsing_error != NULL) {
-            throw_program_error(line->line_number, parsing_error, line->file_name, TRUE);
+            program_log(ERROR,line->line_number, parsing_error, line->file_name, TRUE);
             return FALSE;
         }
         /* code the number into the code image */
@@ -318,7 +345,7 @@ Bool code_word_from_operand(ParsedLine *line, Word *code_image, const int *ic, c
 
         /* check if the register is valid */
         if (reg == INVALID_REGISTER) {
-            throw_program_error(line->line_number, join_strings(2, "invalid register: ", raw_operand), line->file_name, TRUE);
+            program_log(ERROR,line->line_number, join_strings(2, "invalid register: ", raw_operand), line->file_name, TRUE);
             return FALSE;
         }
 
@@ -351,14 +378,14 @@ Bool address_code_instruction(ParsedLine *line, Word *code_image, int *ic) {
     InstructionCode op_num = get_instruction_code(line->main_operand);
     /* check if the instruction is valid */
     if (op_num == INVALID_INSTRUCTION) {
-        throw_program_error(line->line_number, join_strings(2, "invalid instruction: ", line->main_operand), line->file_name, TRUE);
+        program_log(ERROR,line->line_number, join_strings(2, "invalid instruction: ", line->main_operand), line->file_name, TRUE);
         return FALSE;
     }
     /* get the instruction options */
     get_instruction_options(op_num, &i_options);
     /* check if the number of operands is valid by checking if the instruction requires a source and/or destination operand */
     if (line->parameters_count != instruction_has_source(i_options) + instruction_has_destination(i_options)) {
-        throw_program_error(line->line_number, join_strings(2, "invalid number of operands for instruction: ", line->main_operand), line->file_name, TRUE);
+        program_log(ERROR,line->line_number, join_strings(2, "invalid number of operands for instruction: ", line->main_operand), line->file_name, TRUE);
         return FALSE;
     }
     /* process the instruction and check if it was successful */
@@ -387,10 +414,10 @@ Bool handle_parameter_operands(ParsedLine *line, Word *code_image, int *ic, char
         /* if the instruction has only one operand, isolate if its the source or destination operand */
         if ((src_op) == NO_VALUE) {
             /* the operand is a destination operand */
-            CHECK_AND_UPDATE_SUCCESS(is_success, code_word_from_operand(line, code_image, ic, raw_dest_operand, dest_op, DESTINATION));
+            ASSIGN_LEFT_LOGICAL_AND(is_success, code_word_from_operand(line, code_image, ic, raw_dest_operand, dest_op, DESTINATION));
         } else {
             /* the operand is a source operand */
-            CHECK_AND_UPDATE_SUCCESS(is_success, code_word_from_operand(line, code_image, ic, raw_src_operand, src_op, SOURCE));
+            ASSIGN_LEFT_LOGICAL_AND(is_success, code_word_from_operand(line, code_image, ic, raw_src_operand, src_op, SOURCE));
         }
 
         if (!is_success) return FALSE;
@@ -399,17 +426,16 @@ Bool handle_parameter_operands(ParsedLine *line, Word *code_image, int *ic, char
     } else {
         /* the instruction has two operands, both source and destination */
         /* code the source operand */
-        if (CHECK_AND_UPDATE_SUCCESS(is_success, code_word_from_operand(line, code_image, ic, raw_src_operand, src_op, SOURCE))) {
+        if (ASSIGN_LEFT_LOGICAL_AND(is_success, code_word_from_operand(line, code_image, ic, raw_src_operand, src_op, SOURCE))) {
             (*ic)++;
             /* if not both operands are registers, add another word for the destination operand */
             if (!(src_op == REGISTER && dest_op == REGISTER)) {
-                CHECK_AND_UPDATE_SUCCESS(is_success, code_word_from_operand(line, code_image, ic, raw_dest_operand, dest_op, DESTINATION));
-
+                ASSIGN_LEFT_LOGICAL_AND(is_success, code_word_from_operand(line, code_image, ic, raw_dest_operand, dest_op, DESTINATION));
                 if (!is_success) {
+                    /* if the first operand was successful but the second wasn't, decrement the instruction counter from the previous increment for the first operand */
                     (*ic)--;
                     return FALSE;
                 };
-
                 (*ic)++;
             } else {
                 /* if both operands are registers, code them in the same word */
@@ -417,15 +443,12 @@ Bool handle_parameter_operands(ParsedLine *line, Word *code_image, int *ic, char
                 dest_register = get_register(raw_dest_operand);
                 /* check if the registers are valid */
                 if (src_register == INVALID_REGISTER || dest_register == INVALID_REGISTER) {
-
                     if (src_register == INVALID_REGISTER) {
-                        throw_program_error(line->line_number, join_strings(2, "invalid register: ", raw_src_operand), line->file_name, TRUE);
+                        program_log(ERROR,line->line_number, join_strings(2, "invalid register: ", raw_src_operand), line->file_name, TRUE);
                     }
-
                     if (dest_register == INVALID_REGISTER) {
-                        throw_program_error(line->line_number, join_strings(2, "invalid register: ", raw_dest_operand), line->file_name, TRUE);
+                        program_log(ERROR,line->line_number, join_strings(2, "invalid register: ", raw_dest_operand), line->file_name, TRUE);
                     }
-
                     (*ic)--;
                     return FALSE;
                 }
@@ -473,7 +496,7 @@ Bool handle_instruction(const ParsedLine *line, Word *code_image, int *ic, const
     }
     /* check if the addressing types are legal for the instruction */
     if (!is_addressing_types_legal((*i_options), (*src_op), (*dest_op))) {
-        throw_program_error(line->line_number, join_strings(2, "invalid operand type for instruction: ", line->main_operand), (char *) line->file_name, TRUE);
+        program_log(ERROR,line->line_number, join_strings(2, "invalid operand type for instruction: ", line->main_operand), (char *) line->file_name, TRUE);
         return FALSE;
     }
     /* parse the instruction to a word */
@@ -568,6 +591,7 @@ void get_instruction_options(InstructionCode i_code, InstructionOptions *i_optio
     }
 }
 
+/*TODO: consts */
 void get_word_addressing_types(Word *word, AddressingType *src, AddressingType *dest) {
     /* slots 9-11 are src addressing type */
     *src = (AddressingType) (word->bits[9] + (word->bits[10] << 1) + (word->bits[11] << 2));
@@ -577,19 +601,16 @@ void get_word_addressing_types(Word *word, AddressingType *src, AddressingType *
 
 
 Bool is_valid_commas(char *line, char *error_message, int non_parameter_tokens_count) {
-    int token_count = 0;
-    int comma_count = 0;
-    int i = 0;
+    int token_count = 0,comma_count = 0,i = 0;
     int len = strlen(line);
-    Bool is_previous_char_comma = FALSE;
-    Bool is_token_start = TRUE;
+    Bool is_previous_char_comma = FALSE,is_token_start = TRUE;
 
     for (i = 0; i < len; i++) {
         /* skip spaces */
         if (isspace(line[i])) {
             is_token_start = TRUE;
             continue;
-        } else if (line[i] == ',') {
+        } else if (line[i] == COMMA) {
             /* check for consecutive commas */
             if (is_previous_char_comma) {
                 strcpy(error_message, "Multiple consecutive commas found");

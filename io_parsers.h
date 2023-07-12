@@ -51,3 +51,11 @@ void parse_line(char *line, ParsedLine *parsed_line);
  * @param line Pointer to the ParsedLine structure to free.
  */
 void free_parsed_line(ParsedLine *line);
+
+
+/**
+ * Clears the stream until the end of the line.
+ *
+ * @param stream The file stream to clear.
+ */
+void clear_current_line(FILE *stream);

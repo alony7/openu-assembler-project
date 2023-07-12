@@ -18,7 +18,7 @@
  * @param file_name The name of the input file.
  * @param ic Pointer to the current instruction counter (IC) value.
  * @param dc Pointer to the current data counter (DC) value.
- * @param should_second_step Pointer to a flag indicating whether the second step should be performed or not.
+ * @param should_continue_file_processing Pointer to a flag indicating whether the second step should be performed or not.
  * @return TRUE if the first step processing was successful, FALSE otherwise.
  */
-Bool first_step_process(Word data_image[MEMORY_SIZE], Word code_image[MEMORY_SIZE], SymbolTable *labels_table, SymbolTable *relocations_table,ErrorList *errors,char *file_name, int *ic, int *dc,Bool *should_second_step);
+Bool first_step_process(Word data_image[MEMORY_SIZE], Word code_image[MEMORY_SIZE], SymbolTable *labels_table, SymbolTable *relocations_table,ErrorList *errors,char *file_name, int *ic, int *dc,Bool *should_continue_file_processing);

@@ -4,6 +4,11 @@
 #include "util_types.h"
 #define CLEAN_STRING(str) do { clean_crlf(str); add_null_char(str); } while(0)
 
+
+
+
+void system_log(LogLevel level, const char *message, Bool should_free_msg);
+
 /**
  * Concatenates an array of strings into a single string.
  *
@@ -128,9 +133,14 @@ void word_to_base64(Word *word, char *base64);
  */
 void clean_crlf(char *str);
 
+
+void program_log(LogLevel level,int line_number, char *message, char *file_name, Bool should_free_smg);
+
 /**
  * Adds a null character to the end of a string.
  *
  * @param str The string to modify.
  */
 void add_null_char(char *str);
+
+Bool string_ends_with(char *str, char *suffix);

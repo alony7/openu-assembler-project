@@ -125,30 +125,30 @@ Bool is_register(const char *operand) {
 }
 
 Bool is_label(char *instruction) {
-    return instruction[strlen(instruction) - 1] == LABEL_TERMINATOR;
+    return LAST_CHAR(instruction) == LABEL_TERMINATOR;
 }
 
-int parse_int(char *str,int max_size,int min_size,char **error_message) {
+int parse_int(char *str, int max_size, int min_size, char **error_message) {
     int num;
     char *endptr;
-    if(str == NULL){
+    if (str == NULL) {
         *error_message = "NULL string to parse";
         return -1;
     }
     num = strtol(str, &endptr, 10);
 
     /* check if the string is a valid number */
-    if(*endptr != '\0'){
-        *error_message = join_strings(2,"Invalid number: ",str);
+    if (*endptr != '\0') {
+        *error_message = join_strings(2, "Invalid number: ", str);
         return -1;
     }
     /* check if the number is in the valid range */
-    if(num > max_size){
-        *error_message = join_strings(2,"number is too big: ",str);
+    if (num > max_size) {
+        *error_message = join_strings(2, "number is too big: ", str);
         return -1;
     }
-    if(num < min_size){
-        *error_message = join_strings(2,"number is too small: ",str);
+    if (num < min_size) {
+        *error_message = join_strings(2, "number is too small: ", str);
         return -1;
     }
     return num;
@@ -183,25 +183,27 @@ char *join_strings(int num_strings, ...) {
 void trim_string_quotes(char *str) {
     int i;
     for (i = 0; i < strlen(str); i++) {
-        /* if the character is a quote, remove it */
         str[i] = str[i + 1];
     }
     /* remove the last quote */
-    str[strlen(str) - 1] = '\0';
+    LAST_CHAR(str) = '\0';
 }
 
 char base64_encode(unsigned int value) {
+    int uppercase_letters_max = ALPHABET_SIZE;
+    int lowercase_letters_max = ALPHABET_SIZE * 2;
+    int numeric_max = ALPHABET_SIZE * 2 + 10;
     /* calculate the base64 value of the given number */
-    if (value < 26) {
-        return 'A' + value;
-    } else if (value < 52) {
-        return 'a' + (value - 26);
-    } else if (value < 62) {
-        return '0' + (value - 52);
-    } else if (value == 62) {
-        return '+';
+    if (value < uppercase_letters_max) {
+        return CAPITAL_A + value;
+    } else if (value < lowercase_letters_max) {
+        return SMALL_A + (value - uppercase_letters_max);
+    } else if (value < numeric_max) {
+        return ZERO_CHAR + (value - lowercase_letters_max);
+    } else if (value == numeric_max) {
+        return BASE64_62TH_CHAR;
     } else {
-        return '/';
+        return BASE64_63TH_CHAR;
     }
 }
 
@@ -209,15 +211,16 @@ void word_to_base64(Word *word, char *base64) {
     unsigned int first6Bits = 0;
     unsigned int second6Bits = 0;
     int i;
+    int half_word_size = WORD_SIZE / 2;
 
-    for (i = 5; i >= 0; i--) {
+    for (i = half_word_size - 1; i >= 0; i--) {
         /* shift the first 6 bits to the right */
         first6Bits += (word->bits[i] << (i));
     }
 
-    for (i = 11; i >= 6; i--) {
+    for (i = WORD_SIZE - 1; i >= half_word_size; i--) {
         /* shift the second 6 bits to the right */
-        second6Bits += (word->bits[i] << (i - 6));
+        second6Bits += (word->bits[i] << (i - half_word_size));
     }
 
     base64[0] = base64_encode(second6Bits);
@@ -229,26 +232,73 @@ void word_to_base64(Word *word, char *base64) {
 
 void clean_crlf(char *str) {
     int i;
-    if(str == NULL){
+    if (str == NULL) {
         return;
     }
     for (i = 0; i < strlen(str); i++) {
         /* if the character is a CRLF, remove it */
-        if (str[i] == '\n' || str[i] == WINDOWS_CRLF || str[i] == LINUX_CRLF) {
+        if (str[i] == EOL || str[i] == WINDOWS_CRLF || str[i] == LINUX_CRLF) {
             /* remove the CRLF */
-            str[i] = '\0';
+            str[i] = NULL_CHAR;
         }
     }
 }
 
 void add_null_char(char *str) {
-    if(str == NULL){
+    if (str == NULL) {
         return;
     }
-    str[strlen(str)] = '\0';
+    str[strlen(str)] = NULL_CHAR;
 }
 
 Bool is_memory_exceeded(int ic, int dc) {
     /* check if the memory is exceeded */
-    return ic + dc >= MEMORY_SIZE ;
+    return ic + dc >= MEMORY_SIZE;
+}
+
+void system_log(LogLevel level, const char *message, Bool should_free_msg){
+    switch (level) {
+        case INFO:
+            fprintf(stdout,"INFO -> %s\n", message);
+            break;
+        case WARN:
+            fprintf(stdout,"WARN -> %s\n", message);
+            break;
+        case ERROR:
+            fprintf(stderr,"ERROR -> %s\n", message);
+            break;
+    }
+    if(should_free_msg){
+        free((void *)message);
+    }
+}
+
+void program_log(LogLevel level,int line_number, char *message, char *file_name, Bool should_free_smg) {
+    switch (level) {
+        case INFO:
+            fprintf(stdout, "INFO in file '%s' (line %d): %s\n", file_name, line_number, message);
+            break;
+        case WARN:
+            fprintf(stdout, "WARN in file '%s' (line %d): %s\n", file_name, line_number, message);
+            break;
+        case ERROR:
+            fprintf(stderr, "ERROR in file '%s' (line %d): %s\n", file_name, line_number, message);
+            break;
+
+    }
+
+    /* if the error message was allocated dynamically, free it */
+    if (should_free_smg) {
+        free(message);
+    }
+}
+
+
+Bool string_ends_with(char *str, char *suffix){
+    int str_len = strlen(str);
+    int suffix_len = strlen(suffix);
+    if (str_len < suffix_len) {
+        return FALSE;
+    }
+    return strcmp(str + str_len - suffix_len, suffix) == 0;
 }

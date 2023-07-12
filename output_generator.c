@@ -113,6 +113,7 @@ void export_words_to_file(Word *words, int num_of_words, FILE *file) {
     int i;
     char base64_word[BASE64_WORD_LENGTH + 1] = {0};
     /* iterate over the words, encode each word to base64 and write it to the file */
+    /* TODO: change back */
     for (i = 0; i < num_of_words; i++) {
         /* encode the word to base64 */
         word_to_base64(&words[i], base64_word);
